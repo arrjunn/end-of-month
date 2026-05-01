@@ -1,0 +1,346 @@
+import type {
+  Restaurant,
+  MenuItem,
+  Coupon,
+  InstamartProduct,
+  DineoutRestaurant,
+  DineoutSlot,
+  Recipe,
+} from "./types";
+
+// Fixtures sized for a believable 7-day demo at ₹500-700 budget in Bangalore.
+// Numbers are realistic for the city; restaurant/product names are illustrative.
+
+export const RESTAURANTS: Restaurant[] = [
+  {
+    id: "r_mow",
+    name: "Meals on Wheels",
+    city: "Bangalore",
+    cuisines: ["South Indian", "Thali"],
+    rating: 4.2,
+    delivery_fee: 19,
+    avg_meal_price: 95,
+  },
+  {
+    id: "r_curryleaf",
+    name: "Curry Leaf",
+    city: "Bangalore",
+    cuisines: ["South Indian"],
+    rating: 4.1,
+    delivery_fee: 25,
+    avg_meal_price: 110,
+  },
+  {
+    id: "r_anand",
+    name: "Anand Sweets & Savouries",
+    city: "Bangalore",
+    cuisines: ["North Indian", "Snacks"],
+    rating: 4.3,
+    delivery_fee: 29,
+    avg_meal_price: 130,
+  },
+  {
+    id: "r_hashtag",
+    name: "Hashtag Veg",
+    city: "Bangalore",
+    cuisines: ["North Indian", "Chinese"],
+    rating: 4.0,
+    delivery_fee: 19,
+    avg_meal_price: 140,
+  },
+];
+
+export const MENU_ITEMS: MenuItem[] = [
+  {
+    id: "m_mow_thali",
+    restaurant_id: "r_mow",
+    name: "Veg Mini Thali",
+    price: 95,
+    is_veg: true,
+    calories: 620,
+    tags: ["thali", "complete-meal"],
+  },
+  {
+    id: "m_curryleaf_meal",
+    restaurant_id: "r_curryleaf",
+    name: "Curry Leaf Veg Meal",
+    price: 110,
+    is_veg: true,
+    calories: 680,
+    tags: ["meal", "rice"],
+  },
+  {
+    id: "m_anand_chole",
+    restaurant_id: "r_anand",
+    name: "Chole Bhature",
+    price: 130,
+    is_veg: true,
+    calories: 720,
+    tags: ["punjabi"],
+  },
+  {
+    id: "m_hashtag_combo",
+    restaurant_id: "r_hashtag",
+    name: "Veg Fried Rice + Manchurian",
+    price: 140,
+    is_veg: true,
+    calories: 750,
+    tags: ["chinese"],
+  },
+];
+
+export const COUPONS: Coupon[] = [
+  {
+    code: "TRYNEW12",
+    description: "12% off on orders above ₹99",
+    min_order: 99,
+    percent_discount: 12,
+    valid_until: "2026-05-31",
+  },
+  {
+    code: "FLAT30",
+    description: "Flat ₹30 off above ₹149",
+    min_order: 149,
+    flat_discount: 30,
+    valid_until: "2026-05-15",
+  },
+];
+
+export const INSTAMART_PRODUCTS: InstamartProduct[] = [
+  {
+    sku: "im_atta_5kg",
+    name: "Aashirvaad Atta 5kg",
+    price: 245,
+    unit: "5kg pack",
+    category: "staple",
+    serves_meals: 25,
+  },
+  {
+    sku: "im_rice_5kg",
+    name: "India Gate Basmati Rice 5kg",
+    price: 540,
+    unit: "5kg pack",
+    category: "staple",
+    serves_meals: 25,
+  },
+  {
+    sku: "im_toor_dal_1kg",
+    name: "Toor Dal 1kg",
+    price: 145,
+    unit: "1kg",
+    category: "staple",
+    serves_meals: 8,
+  },
+  {
+    sku: "im_onion_1kg",
+    name: "Onion 1kg",
+    price: 35,
+    unit: "1kg",
+    category: "vegetable",
+    serves_meals: 6,
+  },
+  {
+    sku: "im_tomato_500g",
+    name: "Tomato 500g",
+    price: 22,
+    unit: "500g",
+    category: "vegetable",
+    serves_meals: 4,
+  },
+  {
+    sku: "im_potato_1kg",
+    name: "Potato 1kg",
+    price: 32,
+    unit: "1kg",
+    category: "vegetable",
+    serves_meals: 5,
+  },
+  {
+    sku: "im_oil_1l",
+    name: "Sundrop Refined Oil 1L",
+    price: 165,
+    unit: "1L",
+    category: "staple",
+    serves_meals: 30,
+  },
+  {
+    sku: "im_pasta_500g",
+    name: "Pasta 500g",
+    price: 95,
+    unit: "500g",
+    category: "ready-to-cook",
+    serves_meals: 4,
+  },
+  {
+    sku: "im_curd_400g",
+    name: "Curd 400g",
+    price: 45,
+    unit: "400g",
+    category: "dairy",
+    serves_meals: 4,
+  },
+];
+
+export const DINEOUT_RESTAURANTS: DineoutRestaurant[] = [
+  {
+    id: "do_truffles",
+    name: "Truffles",
+    city: "Bangalore",
+    cuisines: ["American", "Burgers"],
+    rating: 4.5,
+    cost_for_two: 800,
+    has_happy_hour: true,
+    coords: { lat: 12.9352, lng: 77.6245 }, // Koramangala
+    area: "Koramangala",
+  },
+  {
+    id: "do_socials",
+    name: "Social",
+    city: "Bangalore",
+    cuisines: ["Continental", "Bar"],
+    rating: 4.3,
+    cost_for_two: 1100,
+    has_happy_hour: true,
+    coords: { lat: 12.9719, lng: 77.6412 }, // Indiranagar
+    area: "Indiranagar",
+  },
+  {
+    id: "do_mtr",
+    name: "MTR",
+    city: "Bangalore",
+    cuisines: ["South Indian"],
+    rating: 4.4,
+    cost_for_two: 500,
+    has_happy_hour: false,
+    coords: { lat: 12.9469, lng: 77.5825 }, // Lalbagh
+    area: "Lalbagh Road",
+  },
+];
+
+// ── Recipes ──────────────────────────────────────────────────
+// Tagged by profile + meal-time. Hostel = no stove; recipes assume only
+// a kettle and/or microwave. Phase 2's Llama agent will replace this with
+// dynamically-generated recipes from the actual cart contents.
+
+export const RECIPES: Recipe[] = [
+  {
+    id: "rec_curd_rice",
+    name: "Curd rice",
+    meal_time: "lunch",
+    profiles: ["hostel", "working", "family"],
+    required_skus: ["im_rice_5kg", "im_curd_400g"],
+    prep_minutes: 10,
+    blurb: "Microwave the rice, mix with curd, salt, and chopped onion. Cooling and filling.",
+    filling: true,
+  },
+  {
+    id: "rec_pasta_aglio",
+    name: "Pasta aglio e olio (kettle method)",
+    meal_time: "dinner",
+    profiles: ["hostel", "working"],
+    required_skus: ["im_pasta_500g", "im_oil_1l", "im_onion_1kg"],
+    prep_minutes: 15,
+    blurb: "Boil pasta in kettle, drain, toss with oil and sauteed/raw onion. Add chilli flakes if you have them.",
+    filling: true,
+  },
+  {
+    id: "rec_mashed_potato",
+    name: "Mashed potato bowl",
+    meal_time: "dinner",
+    profiles: ["hostel"],
+    required_skus: ["im_potato_1kg", "im_curd_400g"],
+    prep_minutes: 12,
+    blurb: "Boil potatoes (kettle), mash with curd, salt, pepper. Stupidly filling for the price.",
+    filling: true,
+  },
+  {
+    id: "rec_oats_curd",
+    name: "Curd-onion savoury oats",
+    meal_time: "breakfast",
+    profiles: ["hostel"],
+    required_skus: ["im_curd_400g", "im_onion_1kg"],
+    prep_minutes: 5,
+    blurb: "Mix curd + chopped onion + salt. Eat with biscuits or as is. Zero cook.",
+    filling: false,
+  },
+  {
+    id: "rec_dal_tadka",
+    name: "Toor dal tadka",
+    meal_time: "lunch",
+    profiles: ["working", "family"],
+    required_skus: ["im_toor_dal_1kg", "im_onion_1kg", "im_tomato_500g", "im_oil_1l"],
+    prep_minutes: 25,
+    blurb: "Pressure-cook dal, temper with onion-tomato. The default Indian protein meal.",
+    filling: true,
+  },
+  {
+    id: "rec_aloo_sabzi",
+    name: "Aloo sabzi",
+    meal_time: "dinner",
+    profiles: ["working", "family"],
+    required_skus: ["im_potato_1kg", "im_onion_1kg", "im_tomato_500g", "im_oil_1l"],
+    prep_minutes: 20,
+    blurb: "Cube potato, sauté with onion + tomato. Pairs with rice or chapati.",
+    filling: true,
+  },
+  {
+    id: "rec_veg_pulao",
+    name: "Vegetable pulao",
+    meal_time: "lunch",
+    profiles: ["working", "family"],
+    required_skus: ["im_rice_5kg", "im_onion_1kg", "im_tomato_500g", "im_potato_1kg", "im_oil_1l"],
+    prep_minutes: 30,
+    blurb: "One-pot rice with onion, tomato, potato. Doubles as next day's lunch.",
+    filling: true,
+  },
+  {
+    id: "rec_chapati_dal",
+    name: "Chapati + leftover dal",
+    meal_time: "dinner",
+    profiles: ["working", "family"],
+    required_skus: ["im_atta_5kg", "im_toor_dal_1kg"],
+    prep_minutes: 20,
+    blurb: "Knead atta, roll, tawa-cook. Reheat dal from yesterday. Cheapest dinner in town.",
+    filling: true,
+  },
+  {
+    id: "rec_curd_potato_chaat",
+    name: "Curd-potato chaat",
+    meal_time: "breakfast",
+    profiles: ["hostel", "working"],
+    required_skus: ["im_potato_1kg", "im_curd_400g", "im_onion_1kg"],
+    prep_minutes: 10,
+    blurb: "Boiled potato cubes + curd + chopped onion + salt-pepper. Cold-friendly.",
+    filling: true,
+  },
+];
+
+export const DINEOUT_SLOTS: DineoutSlot[] = [
+  {
+    restaurant_id: "do_truffles",
+    date: "2026-05-08",
+    start_time: "17:00",
+    end_time: "19:00",
+    discount_percent: 45,
+    is_happy_hour: true,
+    cost_per_person_after_discount: 220,
+  },
+  {
+    restaurant_id: "do_socials",
+    date: "2026-05-08",
+    start_time: "16:00",
+    end_time: "19:00",
+    discount_percent: 50,
+    is_happy_hour: true,
+    cost_per_person_after_discount: 275,
+  },
+  {
+    restaurant_id: "do_mtr",
+    date: "2026-05-09",
+    start_time: "12:00",
+    end_time: "15:00",
+    discount_percent: 0,
+    is_happy_hour: false,
+    cost_per_person_after_discount: 250,
+  },
+];

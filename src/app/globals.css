@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (next-themes attaches `class="dark"` on <html>) */
+@variant dark (&:where(.dark, .dark *));
+
+/* ──────────────────────────────────────────────────────────────
+   Swiggy brand palette (per Mobbin design tokens)
+     Paarl       #AD4728  — deep, headline-emphasis, progress fills
+     Neon Carrot #FD9139  — primary CTA, active states
+     Tan Hide    #FCA65E  — soft chips, dark-mode hover-light
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surfaces */
+  --bg: #ffffff;
+  --bg-subtle: #faf5ef; /* warm off-white pulling toward Tan Hide */
+  --bg-elevated: #ffffff;
+
+  /* Text */
+  --fg: #02060c;
+  --fg-muted: #686b78;
+  --fg-faint: #93959e;
+
+  /* Borders */
+  --border: #ece7e0; /* warm-tinted to match the brand */
+  --border-strong: #d4cdc1;
+
+  /* Brand */
+  --brand-deep: #ad4728; /* Paarl */
+  --accent: #fd9139; /* Neon Carrot — primary CTA */
+  --accent-hover: #ad4728; /* Hover deepens to Paarl */
+  --accent-soft: rgba(252, 166, 94, 0.22); /* Tan Hide @ 22% */
+  --brand-warm: #fca65e; /* Tan Hide */
+
+  /* Semantic (Swiggy conventions) */
+  --rating-green: #3d9b6a;
+  --discount-red: #db3743;
+  --veg-green: #3f9d2a;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgba(40, 44, 63, 0.04), 0 4px 12px rgba(40, 44, 63, 0.06);
+  --shadow-elevated: 0 8px 24px rgba(40, 44, 63, 0.10);
+}
+
+.dark {
+  --bg: #0d0a08; /* warm near-black, not pure */
+  --bg-subtle: #1a1410;
+  --bg-elevated: #1c1816;
+
+  --fg: #f5efe7;
+  --fg-muted: #9a9389;
+  --fg-faint: #6b655e;
+
+  --border: #2a231e;
+  --border-strong: #3a3026;
+
+  /* In dark mode, Neon Carrot reads better as primary;
+     Tan Hide brightens for hover (opposite direction from light mode).
+     Paarl shifts to a lifted variant for legibility on dark. */
+  --brand-deep: #d85837; /* lifted Paarl */
+  --accent: #fd9139;
+  --accent-hover: #fca65e; /* Tan Hide lifts the hover */
+  --accent-soft: rgba(253, 145, 57, 0.18);
+  --brand-warm: #fca65e;
+
+  --rating-green: #4cb37b;
+  --discount-red: #ed4f5e;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-brand-deep: var(--brand-deep);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-brand-warm: var(--brand-warm);
+  --color-rating: var(--rating-green);
+  --color-discount: var(--discount-red);
+
+  /* Type scale — modeled on Swiggy's design tokens (B2 Reg = 14px = body) */
+  --font-display: var(--font-display); /* Jost — modified-Futura equivalent */
+  --font-sans: var(--font-sans); /* Inter — Basis Grotesque equivalent */
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11"; /* Inter's stylistic alternates for cleaner numerals */
+}
+
+/* Display class — Jost (geometric, Futura-like). Use on headlines, hero,
+   big numerics. Tighter letter-spacing reads more like Swiggy's display use. */
+.font-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.015em;
+}
+
+html {
+  color-scheme: light dark;
+}
