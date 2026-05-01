@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  // SSR-safe hydration: next-themes' canonical pattern. The compiler-era lint
+  // rule flags this, but there's no cleaner way to defer until client-mount.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {

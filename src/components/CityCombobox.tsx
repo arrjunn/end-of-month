@@ -9,16 +9,13 @@ interface Props {
 }
 
 export function CityCombobox({ value, onChange }: Props) {
-  const [query, setQuery] = useState(value);
+  // Fully controlled: `value` is the source of truth for the input AND the
+  // city. Each keystroke fires onChange, parent state updates, the input
+  // reflects it next render — no local state, no syncing effect needed.
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-
-  // Keep the input in sync if the parent updates `value` (e.g. from geolocation)
-  useEffect(() => {
-    setQuery(value);
-  }, [value]);
 
   // Click-outside to close
   useEffect(() => {
@@ -30,7 +27,7 @@ export function CityCombobox({ value, onChange }: Props) {
   }, []);
 
   // Filter: starts-with first, then contains
-  const q = query.trim().toLowerCase();
+  const q = value.trim().toLowerCase();
   const matches = q
     ? [
         ...INDIAN_CITIES.filter((c) => c.name.toLowerCase().startsWith(q)),
@@ -44,7 +41,6 @@ export function CityCombobox({ value, onChange }: Props) {
 
   function commit(city: string) {
     onChange(city);
-    setQuery(city);
     setOpen(false);
   }
 
@@ -60,9 +56,8 @@ export function CityCombobox({ value, onChange }: Props) {
       e.preventDefault();
       if (matches[highlight]) {
         commit(matches[highlight].name);
-      } else if (query.trim()) {
-        // Free-text input: accept whatever the user typed
-        commit(query.trim());
+      } else if (value.trim()) {
+        commit(value.trim());
       }
     } else if (e.key === "Escape") {
       setOpen(false);
@@ -95,21 +90,15 @@ export function CityCombobox({ value, onChange }: Props) {
         </svg>
         <input
           type="text"
-          value={query}
+          value={value}
           placeholder="Search any Indian city…"
           onChange={(e) => {
-            setQuery(e.target.value);
+            onChange(e.target.value);
             setOpen(true);
             setHighlight(0);
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          onBlur={() => {
-            // Commit free-text on blur if it differs from current value
-            if (query.trim() && query.trim() !== value) {
-              onChange(query.trim());
-            }
-          }}
           className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg pl-9 pr-3 py-2 text-sm focus:border-[var(--accent)] outline-none"
         />
       </div>
@@ -137,7 +126,7 @@ export function CityCombobox({ value, onChange }: Props) {
           ))}
           {q && !matches.some((m) => m.name.toLowerCase() === q) && (
             <li className="px-3 py-2 text-xs text-[var(--fg-muted)] border-t border-[var(--border)]">
-              Press Enter to use “{query.trim()}”
+              Press Enter to use “{value.trim()}”
             </li>
           )}
         </ul>
