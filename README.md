@@ -2,6 +2,8 @@
 
 A week-long meal optimizer for the days when your bank account isn't.
 
+**Live demo →** https://end-of-month.vercel.app/
+
 It's the 24th. Rent cleared. You have ₹600 left for food until the 1st. Right now you doomscroll Swiggy looking for the cheapest biryani, panic-buy Maggi from Instamart, and miss every happy hour Dineout slot in your area. **End of Month** is one agent that reads your budget and plans the entire week across all three — cook days, order days, and the one cheap night out you've earned.
 
 Built on Swiggy's MCP platform. Uses **Food**, **Instamart**, and **Dineout** APIs together — not as separate features, but as one decision.
@@ -140,6 +142,6 @@ I'm an end-of-month person. Most of urban India is. The first time I checked my 
 
 ## Status
 
-Pre-API-key. Repo exists to support the Swiggy Builders Club application. Once keys land I'll wire the three MCP servers and ship v1 within a week.
+Pre-API-key. v0 is **live at https://end-of-month.vercel.app/** running on a mocked MCP layer that's typed against the 35 published Swiggy tool names — the swap to real endpoints is a one-file change per server once Builders Club approves access.
 
 Contact: see Builders Club application.
