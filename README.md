@@ -109,10 +109,13 @@ One screen. One plan. Three carts staged.
 
 ## Roadmap
 
+> Full feature strategy & prioritized roadmap (v0.2, July 2026): **[docs/ROADMAP.md](docs/ROADMAP.md)** — trust-first P0 set (spend caps, intent preview, landed-cost optimizer), the auto-pantry retention loop, and what we're deliberately not building.
+
 **v0 — what this repo will be at submission**
 - Scaffolded Next.js app with the 3 MCP integration points stubbed
 - Agent prompt + planning logic written against mock responses
 - UI for budget input + 7-day plan output
+- Roadmap P0 features already in the planner: landed-cost ranking (item + delivery + platform fee − coupon), hard weekly + per-order spend caps, per-day decision receipts, and variety/fatigue scoring
 
 **v1 — once API keys land**
 - Wire real Food / Instamart / Dineout calls
