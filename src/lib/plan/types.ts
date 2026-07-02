@@ -15,6 +15,9 @@ export interface PlanInput {
   profile: Profile;
   /** Number of days the plan should cover. 3-7. */
   days: number;
+  /** Hard per-transaction spend cap (roadmap P0 #2). No single order or
+   *  booking can exceed this — enforced as a constraint, not a suggestion. */
+  max_per_order?: number;
   /** Optional user coords for travel-time chips on Dineout options. */
   coords?: Coords;
 }
@@ -28,6 +31,8 @@ export interface DayPlan {
   description: string;
   cost: number;
   source?: string;
+  /** Decision receipt (roadmap P0 #4) — one line of why this was picked. */
+  why?: string;
   meta?: Record<string, string | number>;
 }
 

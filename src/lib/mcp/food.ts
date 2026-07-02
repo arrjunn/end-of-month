@@ -6,6 +6,19 @@
 import type { City, Restaurant, MenuItem, Coupon, Diet } from "./types";
 import { RESTAURANTS, MENU_ITEMS, COUPONS } from "./mock-data";
 
+/** Swiggy's per-order platform fee — ₹17.58 as of Mar 2026, rounded. */
+export const PLATFORM_FEE = 18;
+
+export interface OrderCost {
+  item_price: number;
+  delivery_fee: number;
+  platform_fee: number;
+  coupon?: Coupon;
+  discount: number;
+  /** What the order actually charges: item + delivery + platform − coupon. */
+  landed: number;
+}
+
 export const foodMCP = {
   /** Tool: search_restaurants
    *  v0 note: fixtures are Bangalore-only. We return them for any city —
@@ -35,19 +48,19 @@ export const foodMCP = {
     return COUPONS;
   },
 
-  /** Helper: total cost for an order including delivery + best applicable coupon */
-  computeOrderCost(item: MenuItem): { item_price: number; delivery_fee: number; coupon?: Coupon; final: number } {
+  /** Helper: landed cost for an order — item + delivery + platform fee − best
+   *  applicable coupon. Menu price alone understates the bill (roadmap P0 #3). */
+  computeOrderCost(item: MenuItem): OrderCost {
     const restaurant = RESTAURANTS.find((r) => r.id === item.restaurant_id)!;
-    const subtotal = item.price + restaurant.delivery_fee;
+    const subtotal = item.price + restaurant.delivery_fee + PLATFORM_FEE;
 
-    let bestFinal = subtotal;
+    let bestDiscount = 0;
     let bestCoupon: Coupon | undefined;
     for (const coupon of COUPONS) {
       if (item.price < coupon.min_order) continue;
       const discount = coupon.flat_discount ?? Math.round(item.price * (coupon.percent_discount! / 100));
-      const final = subtotal - discount;
-      if (final < bestFinal) {
-        bestFinal = final;
+      if (discount > bestDiscount) {
+        bestDiscount = discount;
         bestCoupon = coupon;
       }
     }
@@ -55,8 +68,10 @@ export const foodMCP = {
     return {
       item_price: item.price,
       delivery_fee: restaurant.delivery_fee,
+      platform_fee: PLATFORM_FEE,
       coupon: bestCoupon,
-      final: bestFinal,
+      discount: bestDiscount,
+      landed: subtotal - bestDiscount,
     };
   },
 };

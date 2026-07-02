@@ -25,6 +25,7 @@ interface Props {
 
 export function BudgetForm({ onSubmit, loading }: Props) {
   const [budget, setBudget] = useState(600);
+  const [maxPerOrder, setMaxPerOrder] = useState("");
   const [diet, setDiet] = useState<Diet>("veg");
   const [city, setCity] = useState<string>("Bangalore");
   const [profile, setProfile] = useState<Profile>("working");
@@ -54,7 +55,15 @@ export function BudgetForm({ onSubmit, loading }: Props) {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit({ budget, diet, city, profile, days, coords });
+        onSubmit({
+          budget,
+          diet,
+          city,
+          profile,
+          days,
+          max_per_order: maxPerOrder ? Number(maxPerOrder) : undefined,
+          coords,
+        });
       }}
       className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] p-6 sm:p-8 shadow-[var(--shadow-card)] space-y-7"
     >
@@ -76,6 +85,28 @@ export function BudgetForm({ onSubmit, loading }: Props) {
           />
         </div>
       </div>
+
+      {/* Per-order spend cap */}
+      <Field label="Per-order cap (optional)">
+        <div className="flex items-center gap-3">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[var(--fg-muted)]">₹</span>
+            <input
+              type="number"
+              min={50}
+              max={5000}
+              step={10}
+              value={maxPerOrder}
+              onChange={(e) => setMaxPerOrder(e.target.value)}
+              placeholder="none"
+              className="font-mono bg-transparent border-b-2 border-[var(--border)] focus:border-[var(--accent)] outline-none w-24 py-1 transition-colors"
+            />
+          </div>
+          <span className="text-xs text-[var(--fg-muted)]">
+            hard cap — no single order or booking can exceed this
+          </span>
+        </div>
+      </Field>
 
       {/* Plan length */}
       <Field label="How many days">

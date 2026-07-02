@@ -3,9 +3,14 @@
 //
 // Stages:
 //   1. Pick one Dineout happy-hour slot (if budget+days allow)
-//   2. Pick N Food order days at the cheapest items meeting diet
+//   2. Pick N Food order days by landed cost (item + delivery + platform
+//      fee − coupon), under spend caps, with variety scoring
 //   3. Fill the rest with cook days backed by an Instamart staple cart
 //   4. Match recipes from the cart to the user's profile + meal-times
+//
+// Roadmap P0 features live here: #2 spend caps (weekly + per-order, hard
+// constraints), #3 landed-cost ranking, #4 decision receipts (`why` per
+// day), #7 variety/fatigue scoring (no cuisine repeats, morale meal late).
 
 import { foodMCP } from "@/lib/mcp/food";
 import { instamartMCP } from "@/lib/mcp/instamart";
@@ -21,7 +26,8 @@ import type {
   DineoutBooking,
   RecipeForCart,
 } from "./types";
-import type { MealTime, Recipe } from "@/lib/mcp/types";
+import type { MealTime, MenuItem, Recipe } from "@/lib/mcp/types";
+import type { OrderCost } from "@/lib/mcp/food";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
@@ -32,13 +38,15 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
   const dineoutDays = days >= 4 ? 1 : 0;
   const remainingDays = days - dineoutDays;
   const orderDays = Math.max(1, Math.round(remainingDays * 0.3));
-  const cookDays = remainingDays - orderDays;
 
   // ── 1. Dineout slot (target: ≤40% of budget) ─────────────────
-  const dineoutBudgetCap = Math.round(input.budget * 0.4);
+  // The per-order cap applies to the booking too — it's a hard constraint.
+  const fortyPercentCap = Math.round(input.budget * 0.4);
+  const dineoutBudgetCap = Math.min(fortyPercentCap, input.max_per_order ?? Infinity);
   let dineoutBooking: DineoutBooking | undefined;
   let dineoutCost = 0;
   let dineoutDayIdx: number | undefined;
+  let dineoutWhy: string | undefined;
 
   if (dineoutDays > 0) {
     const happyHourRestaurants = await dineoutMCP.searchRestaurants({
@@ -68,20 +76,29 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
               : undefined,
         };
         dineoutCost = best.cost_per_person_after_discount;
+        dineoutWhy = `${best.discount_percent}% happy-hour slot at ₹${best.cost_per_person_after_discount}/person — under the ₹${dineoutBudgetCap} dineout cap${
+          dineoutBudgetCap === fortyPercentCap ? " (40% of weekly budget)" : " (your per-order cap)"
+        }.`;
         break;
       }
     }
   }
 
-  // ── 2. Food order items ──────────────────────────────────────
+  // ── 2. Food order items — landed-cost optimizer ──────────────
+  // Rank by what the order actually charges (item + delivery + platform
+  // fee − coupon), not menu price. A ₹95 dish that lands at ₹160 loses
+  // to a ₹110 dish that lands at ₹120.
   const orderCandidates = await foodMCP.searchMenu({
     city: input.city,
     diet: input.diet,
     max_price: 200,
   });
+  const restaurants = await foodMCP.searchRestaurants({ city: input.city });
 
-  const foodOrders: FoodOrderLine[] = [];
-  let orderTotalCost = 0;
+  const ranked: { item: MenuItem; cost: OrderCost }[] = orderCandidates
+    .map((item) => ({ item, cost: foodMCP.computeOrderCost(item) }))
+    .filter(({ cost }) => input.max_per_order == null || cost.landed <= input.max_per_order)
+    .sort((a, b) => a.cost.landed - b.cost.landed);
 
   // Place order days roughly evenly, skipping the dineout day
   const orderDayIdxs: number[] = [];
@@ -93,25 +110,75 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
     }
   }
 
-  const restaurants = await foodMCP.searchRestaurants({ city: input.city });
-  for (let i = 0; i < orderDayIdxs.length && i < orderCandidates.length; i++) {
-    const item = orderCandidates[i];
-    const cost = foodMCP.computeOrderCost(item);
+  // Variety scoring: never repeat a restaurant; avoid repeating a cuisine
+  // while alternatives exist. Track what got skipped so the receipt can
+  // show the trade-off.
+  const picks: { item: MenuItem; cost: OrderCost; varietyNote?: string }[] = [];
+  const usedRestaurants = new Set<string>();
+  const usedCuisines = new Set<string>();
+  let pendingSkipNote: string | undefined;
+
+  for (const candidate of ranked) {
+    if (picks.length >= orderDayIdxs.length) break;
+    if (usedRestaurants.has(candidate.item.restaurant_id)) continue;
+    const cuisine = restaurants.find((r) => r.id === candidate.item.restaurant_id)?.cuisines[0];
+    if (cuisine && usedCuisines.has(cuisine)) {
+      pendingSkipNote = `Skipped ${candidate.item.name} (₹${candidate.cost.landed} landed) — ${cuisine} already on the plan.`;
+      continue;
+    }
+    picks.push({ ...candidate, varietyNote: pendingSkipNote });
+    pendingSkipNote = undefined;
+    usedRestaurants.add(candidate.item.restaurant_id);
+    if (cuisine) usedCuisines.add(cuisine);
+  }
+  // Cuisine rule is soft: if it left order slots empty, fill them anyway
+  for (const candidate of ranked) {
+    if (picks.length >= orderDayIdxs.length) break;
+    if (usedRestaurants.has(candidate.item.restaurant_id)) continue;
+    picks.push(candidate);
+    usedRestaurants.add(candidate.item.restaurant_id);
+  }
+
+  // Fatigue weighting: cheapest order early-week, best meal late-week
+  // when willpower is lowest.
+  picks.sort((a, b) => a.cost.landed - b.cost.landed);
+
+  const foodOrders: FoodOrderLine[] = [];
+  const orderWhys = new Map<number, string>();
+  let orderTotalCost = 0;
+  let runningTotal = dineoutCost;
+
+  for (let i = 0; i < orderDayIdxs.length && i < picks.length; i++) {
+    const { item, cost, varietyNote } = picks[i];
+    // Weekly cap is hard: an order that busts it turns into a cook day
+    if (runningTotal + cost.landed > input.budget) continue;
+
+    const dayNum = orderDayIdxs[i] + 1;
     const restaurantName = restaurants.find((r) => r.id === item.restaurant_id)?.name ?? "";
     foodOrders.push({
-      day: orderDayIdxs[i] + 1,
+      day: dayNum,
       restaurant: restaurantName,
       item: item.name,
       coupon_code: cost.coupon?.code,
-      final_cost: cost.final,
+      final_cost: cost.landed,
     });
-    orderTotalCost += cost.final;
+    orderTotalCost += cost.landed;
+    runningTotal += cost.landed;
+
+    const rank = ranked.findIndex((r) => r.item.id === item.id) + 1;
+    const breakdown = `₹${cost.item_price} + ₹${cost.delivery_fee} delivery + ₹${cost.platform_fee} platform${
+      cost.coupon ? ` − ₹${cost.discount} ${cost.coupon.code}` : ""
+    }`;
+    let why = `Lands at ₹${cost.landed} (${breakdown}) — #${rank} of ${ranked.length} by landed cost, not menu price.`;
+    if (varietyNote) why += ` ${varietyNote}`;
+    orderWhys.set(dayNum, why);
   }
 
   // ── 3. Instamart cart for cook days ──────────────────────────
+  const actualCookDays = days - (dineoutBooking ? 1 : 0) - foodOrders.length;
   const cookBudget = Math.max(0, input.budget - dineoutCost - orderTotalCost);
   const cart = instamartMCP.buildWeeklyCart({
-    cookDays,
+    cookDays: actualCookDays,
     budget: cookBudget,
     diet: input.diet,
   });
@@ -119,6 +186,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
   // ── 4. Stitch the schedule ───────────────────────────────────
   const schedule: DayPlan[] = [];
   const cartSkus = new Set(cart.lines.map((l) => l.sku));
+  const perMealCost = cart.serves > 0 ? Math.round(cart.total / cart.serves) : 0;
 
   for (let i = 0; i < days; i++) {
     const weekday = WEEKDAYS[i];
@@ -132,6 +200,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
         description: `${dineoutBooking.restaurant} (${dineoutBooking.discount_percent}% off, happy hour)`,
         cost: dineoutBooking.per_person_cost,
         source: "Dineout",
+        why: dineoutWhy,
         meta: dineoutBooking.travel_minutes
           ? { slot: dineoutBooking.slot, travel: `${dineoutBooking.travel_minutes} min away` }
           : { slot: dineoutBooking.slot },
@@ -148,6 +217,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
         description: `${order.item} from ${order.restaurant}`,
         cost: order.final_cost,
         source: "Food",
+        why: orderWhys.get(dayNum),
         meta: order.coupon_code ? { coupon: order.coupon_code } : undefined,
       });
       continue;
@@ -164,6 +234,10 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
         : "Leftovers / next batch from cart",
       cost: isFirstCookDay ? cart.total : 0,
       source: "Instamart",
+      why:
+        isFirstCookDay && cart.lines.length > 0
+          ? `₹${cart.total} cart covers ~${cart.serves} meals (≈₹${perMealCost}/meal) — no delivery or platform fees on cook days.`
+          : undefined,
     });
   }
 
