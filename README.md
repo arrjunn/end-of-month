@@ -115,6 +115,7 @@ One screen. One plan. Three carts staged.
 - Scaffolded Next.js app with the 3 MCP integration points stubbed
 - Agent prompt + planning logic written against mock responses
 - UI for budget input + 7-day plan output
+- Roadmap P0 features already in the planner: landed-cost ranking (item + delivery + platform fee − coupon), hard weekly + per-order spend caps, per-day decision receipts, and variety/fatigue scoring
 
 **v1 — once API keys land**
 - Wire real Food / Instamart / Dineout calls

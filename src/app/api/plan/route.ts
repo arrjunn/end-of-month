@@ -8,6 +8,7 @@ const PlanRequest = z.object({
   city: z.string().trim().min(2).max(80),
   profile: z.enum(["hostel", "working", "family"]),
   days: z.number().int().min(2).max(7),
+  max_per_order: z.number().int().min(50).max(5000).optional(),
   coords: z
     .object({ lat: z.number(), lng: z.number() })
     .optional(),
