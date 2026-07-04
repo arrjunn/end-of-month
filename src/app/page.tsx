@@ -111,8 +111,12 @@ function HeroBand({ compact }: { compact: boolean }) {
         </h1>
         {!compact && (
           <p className="mt-3 text-white/90 text-sm sm:text-base max-w-xl">
-            Give it your food budget. It plans every meal of the week — cook, order
-            in, or dine out — and shows the math for every pick.
+            <span className="block">
+              Give it your food budget and it plans every meal of the week.
+            </span>
+            <span className="block mt-1">
+              It decides when you cook, order in, or dine out, and shows the math.
+            </span>
           </p>
         )}
       </div>
@@ -126,7 +130,7 @@ const SERVERS = [
   {
     icon: BikeIcon,
     name: "Food",
-    line: "Cheapest landed cost across nearby restaurants — fees and coupons included.",
+    line: "Cheapest landed cost across nearby restaurants, fees and coupons included.",
   },
   {
     icon: BasketIcon,

@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "End of Month — week meal optimizer",
+  title: "End of Month · Week Meal Optimizer",
   description:
     "Tell it your budget. It plans cook days, order days, and one cheap night out across Swiggy Food, Instamart, and Dineout.",
 };

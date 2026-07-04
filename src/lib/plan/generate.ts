@@ -76,7 +76,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
               : undefined,
         };
         dineoutCost = best.cost_per_person_after_discount;
-        dineoutWhy = `${best.discount_percent}% happy-hour slot at ₹${best.cost_per_person_after_discount}/person — under the ₹${dineoutBudgetCap} dineout cap${
+        dineoutWhy = `${best.discount_percent}% happy-hour slot at ₹${best.cost_per_person_after_discount}/person, under the ₹${dineoutBudgetCap} dineout cap${
           dineoutBudgetCap === fortyPercentCap ? " (40% of weekly budget)" : " (your per-order cap)"
         }.`;
         break;
@@ -123,7 +123,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
     if (usedRestaurants.has(candidate.item.restaurant_id)) continue;
     const cuisine = restaurants.find((r) => r.id === candidate.item.restaurant_id)?.cuisines[0];
     if (cuisine && usedCuisines.has(cuisine)) {
-      pendingSkipNote = `Skipped ${candidate.item.name} (₹${candidate.cost.landed} landed) — ${cuisine} already on the plan.`;
+      pendingSkipNote = `Skipped ${candidate.item.name} (₹${candidate.cost.landed} landed) since ${cuisine} is already on the plan.`;
       continue;
     }
     picks.push({ ...candidate, varietyNote: pendingSkipNote });
@@ -169,7 +169,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
     const breakdown = `₹${cost.item_price} + ₹${cost.delivery_fee} delivery + ₹${cost.platform_fee} platform${
       cost.coupon ? ` − ₹${cost.discount} ${cost.coupon.code}` : ""
     }`;
-    let why = `Lands at ₹${cost.landed} (${breakdown}) — #${rank} of ${ranked.length} by landed cost, not menu price.`;
+    let why = `Lands at ₹${cost.landed} (${breakdown}). Ranked #${rank} of ${ranked.length} by landed cost, not menu price.`;
     if (varietyNote) why += ` ${varietyNote}`;
     orderWhys.set(dayNum, why);
   }
@@ -236,7 +236,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
       source: "Instamart",
       why:
         isFirstCookDay && cart.lines.length > 0
-          ? `₹${cart.total} cart covers ~${cart.serves} meals (≈₹${perMealCost}/meal) — no delivery or platform fees on cook days.`
+          ? `₹${cart.total} cart covers ~${cart.serves} meals (≈₹${perMealCost}/meal). No delivery or platform fees on cook days.`
           : undefined,
     });
   }

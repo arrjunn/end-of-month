@@ -206,7 +206,7 @@ export function BudgetForm({ onSubmit, loading }: Props) {
               />
             </div>
             <span className="text-xs text-[var(--fg-muted)]">
-              per-order cap — no single order or booking can exceed this
+              per-order cap. No single order or booking can exceed this.
             </span>
           </div>
         </details>
