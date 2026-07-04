@@ -11,8 +11,10 @@ import type { PanicInput, PanicResult } from "@/lib/plan/panic";
 import {
   readStore,
   writeStore,
+  useStoreValue,
   PANTRY_KEY,
   HISTORY_KEY,
+  FLINCH_KEY,
   EMPTY_STRINGS,
   EMPTY_HISTORY,
   type HistoryEntry,
@@ -104,6 +106,7 @@ export default function Home() {
       setMode("plan");
       setFormCollapsed(true);
       setWhatIfBase(data.input.budget);
+      writeStore(FLINCH_KEY, true);
 
       const history = readStore<HistoryEntry[]>(HISTORY_KEY, EMPTY_HISTORY);
       writeStore(
@@ -134,6 +137,7 @@ export default function Home() {
         <div className="grid lg:grid-cols-[380px_1fr] gap-6 items-start">
           {/* ── Control panel ── */}
           <aside className="lg:sticky lg:top-[4.5rem]">
+            <FlinchCard />
             {formCollapsed && (plan || mode === "panic") && (
               <button
                 onClick={() => setFormCollapsed(false)}
@@ -224,6 +228,53 @@ function HeroBand({ compact }: { compact: boolean }) {
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── Flinch onboarding (first visit only) ──────────────────────── */
+
+function FlinchCard() {
+  const done = useStoreValue<boolean>(FLINCH_KEY, false);
+  const [monthly, setMonthly] = useState("");
+  if (done) return null;
+
+  const weekly = monthly ? Math.round(Number(monthly) / 4.33 / 10) * 10 : null;
+
+  return (
+    <div className="mb-3 rounded-2xl border border-[var(--accent)]/40 bg-[var(--accent-soft)] p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-sm font-semibold">Quick check before you start</div>
+        <button
+          onClick={() => writeStore(FLINCH_KEY, true)}
+          aria-label="Dismiss"
+          className="text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors leading-none text-lg"
+        >
+          ×
+        </button>
+      </div>
+      <label className="block text-xs text-[var(--fg-muted)] mt-1.5">
+        Roughly what goes to Swiggy in a month?
+      </label>
+      <div className="mt-2 flex items-baseline gap-1.5">
+        <span className="text-[var(--fg-muted)]">₹</span>
+        <input
+          type="number"
+          min={0}
+          max={100000}
+          step={100}
+          value={monthly}
+          onChange={(e) => setMonthly(e.target.value)}
+          placeholder="4000"
+          className="no-spinner font-mono font-semibold bg-transparent border-b-2 border-[var(--border-strong)] focus:border-[var(--accent)] outline-none w-24 py-0.5 transition-colors tabular-nums"
+        />
+      </div>
+      {weekly != null && weekly > 0 && (
+        <p className="mt-2.5 text-xs leading-relaxed">
+          That is about <span className="font-bold">₹{weekly} a week</span>. Set a
+          weekly budget below and pocket the difference.
+        </p>
+      )}
     </div>
   );
 }

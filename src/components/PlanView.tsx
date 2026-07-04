@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { Plan, DayPlan, DayType, WeekTemplate } from "@/lib/plan/types";
+import { formatPlanText } from "@/lib/plan/share";
 import { useStoreValue, writeStore, PANTRY_KEY, EMPTY_STRINGS } from "@/lib/store";
 import { PanIcon, BikeIcon, DineIcon, BasketIcon, TagIcon } from "./icons";
 
@@ -164,14 +165,83 @@ export function PlanView({ plan, whatIfBase, whatIfBusy, onWhatIf }: Props) {
         <div className="receipt-edge-bottom" />
       </div>
 
+      {/* ── Share ── */}
+      <div className="mt-3 flex justify-end">
+        <ShareButton plan={plan} />
+      </div>
+
       {/* ── Annexes ── */}
-      <div className="mt-6 space-y-3">
+      <div className="mt-3 space-y-3">
         {plan.savings_tips.length > 0 && <SaveMore tips={plan.savings_tips} />}
         {plan.recipes.length > 0 && <Recipes plan={plan} />}
         <Cart plan={plan} />
         {plan.dineout_booking && <Booking plan={plan} />}
       </div>
     </section>
+  );
+}
+
+/* ── Share ────────────────────────────────────────────────────── */
+
+function ShareButton({ plan }: { plan: Plan }) {
+  const [copied, setCopied] = useState(false);
+
+  async function share() {
+    const text = formatPlanText(plan);
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: "My week receipt", text });
+        return;
+      } catch {
+        // user dismissed the sheet or share failed; fall through to copy
+      }
+    }
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      // async clipboard unavailable; fall back to a hidden textarea copy
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        ok = document.execCommand("copy");
+      } finally {
+        ta.remove();
+      }
+    }
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
+
+  return (
+    <button
+      onClick={share}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-semibold text-[var(--fg-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+    >
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+      </svg>
+      {copied ? "Copied ✓" : "Share receipt"}
+    </button>
   );
 }
 
