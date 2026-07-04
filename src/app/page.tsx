@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { TopNav } from "@/components/TopNav";
 import { BudgetForm } from "@/components/BudgetForm";
 import { PlanView } from "@/components/PlanView";
+import { PanicPane } from "@/components/PanicPane";
 import { BikeIcon, BasketIcon, DineIcon } from "@/components/icons";
 import type { Plan, PlanInput } from "@/lib/plan/types";
+import type { PanicInput, PanicResult } from "@/lib/plan/panic";
 
 export default function Home() {
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -14,6 +16,38 @@ export default function Home() {
   // After a plan lands, the form collapses to a summary chip on mobile so
   // the receipt owns the screen. Desktop always shows both panes.
   const [formCollapsed, setFormCollapsed] = useState(false);
+  // Results pane shows the weekly plan or the panic finder. All panic
+  // fetches run from event handlers here; PanicPane is presentational.
+  const [mode, setMode] = useState<"plan" | "panic">("plan");
+  const [panicParams, setPanicParams] = useState<PanicInput | null>(null);
+  const [panicResult, setPanicResult] = useState<PanicResult | null>(null);
+  const [panicLoading, setPanicLoading] = useState(false);
+  const [panicError, setPanicError] = useState<string | null>(null);
+
+  async function searchPanic(params: PanicInput) {
+    setPanicLoading(true);
+    setPanicError(null);
+    try {
+      const res = await fetch("/api/panic", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) throw new Error(`Panic API returned ${res.status}`);
+      setPanicResult(await res.json());
+    } catch (e) {
+      setPanicError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setPanicLoading(false);
+    }
+  }
+
+  function handlePanic(params: PanicInput) {
+    setPanicParams(params);
+    setMode("panic");
+    setFormCollapsed(true);
+    void searchPanic(params);
+  }
 
   async function handlePlan(input: PlanInput) {
     setLoading(true);
@@ -32,6 +66,7 @@ export default function Home() {
       if (!res.ok) throw new Error(`Plan API returned ${res.status}`);
       const data: Plan = await res.json();
       setPlan(data);
+      setMode("plan");
       setFormCollapsed(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -49,20 +84,21 @@ export default function Home() {
         <div className="grid lg:grid-cols-[380px_1fr] gap-6 items-start">
           {/* ── Control panel ── */}
           <aside className="lg:sticky lg:top-[4.5rem]">
-            {plan && formCollapsed && (
+            {formCollapsed && (plan || mode === "panic") && (
               <button
                 onClick={() => setFormCollapsed(false)}
                 className="lg:hidden w-full mb-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] shadow-[var(--shadow-card)] px-4 py-3 flex items-center justify-between text-sm"
               >
                 <span className="font-mono">
-                  ₹{plan.input.budget} · {plan.input.days} days · {plan.input.diet} ·{" "}
-                  {plan.input.city}
+                  {plan
+                    ? `₹${plan.input.budget} · ${plan.input.days} days · ${plan.input.diet} · ${plan.input.city}`
+                    : "Plan inputs"}
                 </span>
                 <span className="text-[var(--accent)] font-semibold">Edit</span>
               </button>
             )}
-            <div className={plan && formCollapsed ? "hidden lg:block" : ""}>
-              <BudgetForm onSubmit={handlePlan} loading={loading} />
+            <div className={(plan || mode === "panic") && formCollapsed ? "hidden lg:block" : ""}>
+              <BudgetForm onSubmit={handlePlan} onPanic={handlePanic} loading={loading} />
             </div>
           </aside>
 
@@ -73,7 +109,20 @@ export default function Home() {
                 {error}
               </div>
             )}
-            {loading ? (
+            {mode === "panic" && panicParams ? (
+              <PanicPane
+                params={panicParams}
+                result={panicResult}
+                loading={panicLoading}
+                error={panicError}
+                onSearch={(budget) => {
+                  const next = { ...panicParams, budget };
+                  setPanicParams(next);
+                  void searchPanic(next);
+                }}
+                onBack={() => setMode("plan")}
+              />
+            ) : loading ? (
               <AgentProgress />
             ) : plan ? (
               <PlanView plan={plan} />
