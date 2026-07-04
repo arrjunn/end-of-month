@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Jost, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { TopNav } from "@/components/TopNav";
 
 // Display: Jost — geometric sans, free Google Fonts equivalent of Swiggy's
 // modified Futura. Used on headlines, hero, big numbers.
@@ -30,6 +29,10 @@ export const metadata: Metadata = {
     "Tell it your budget. It plans cook days, order days, and one cheap night out across Swiggy Food, Instamart, and Dineout.",
 };
 
+export const viewport: Viewport = {
+  themeColor: "#ff5200",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,10 +45,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <ThemeProvider>
-          <TopNav />
-          {children}
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
