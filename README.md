@@ -65,8 +65,8 @@ One screen. One plan. Three carts staged.
 ## Tech stack
 
 **App**
-- **Next.js 14** (App Router) — Server Actions drive the agent loop, RSC renders the plan
-- **Tailwind + shadcn/ui** — UI
+- **Next.js 16** (App Router) — an API route runs the deterministic planner today; the agent loop replaces it in Phase 2
+- **Tailwind CSS v4** — custom Swiggy-token design system: brand orange `#FF5200`, Jost/Inter/Geist Mono type scale, class-based dark mode
 - **Vercel** — deploy in `bom1` (Mumbai) to sit next to Swiggy's `ap-south-1` region and keep the agent loop's per-tool-call RTT low
 
 **Agent layer**
@@ -114,7 +114,9 @@ One screen. One plan. Three carts staged.
 **v0 — what this repo will be at submission**
 - Scaffolded Next.js app with the 3 MCP integration points stubbed
 - Agent prompt + planning logic written against mock responses
-- UI for budget input + 7-day plan output
+- Swiggy-aligned app shell: sticky control panel + results pane, the plan rendered as a week receipt with a per-day "why" behind every pick, and a budget burn-down bar pinned in the nav
+- Plans for any 2–7 day stretch (3/5/7 presets plus a custom stepper)
+- "Save more" tips grounded in the plan's actual picks: which coupon to apply on which day, paying through the Swiggy Dineout app to keep the happy-hour rate, batching the Instamart cart, and Swiggy One membership math
 - Roadmap P0 features already in the planner: landed-cost ranking (item + delivery + platform fee − coupon), hard weekly + per-order spend caps, per-day decision receipts, and variety/fatigue scoring
 
 **v1 — once API keys land**
