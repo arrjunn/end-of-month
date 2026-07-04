@@ -45,6 +45,16 @@ export function DineIcon({ className }: IconProps) {
   );
 }
 
+/** Offers / save-more tips */
+export function TagIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M3 3h8l10 10-8 8L3 11V3Z" />
+      <circle cx="8" cy="8" r="1.4" />
+    </svg>
+  );
+}
+
 /** Instamart basket */
 export function BasketIcon({ className }: IconProps) {
   return (

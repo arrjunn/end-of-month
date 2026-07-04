@@ -16,7 +16,9 @@ const PROFILES: { value: Profile; label: string; sub: string }[] = [
   { value: "working", label: "Working pro", sub: "full kitchen, time-pressed" },
   { value: "family", label: "Family", sub: "multi-portion meals" },
 ];
-const DAY_OPTIONS = [3, 5, 7];
+const DAY_PRESETS = [3, 5, 7];
+const MIN_DAYS = 2;
+const MAX_DAYS = 7;
 
 interface Props {
   onSubmit: (input: PlanInput) => void;
@@ -30,6 +32,7 @@ export function BudgetForm({ onSubmit, loading }: Props) {
   const [city, setCity] = useState<string>("Bangalore");
   const [profile, setProfile] = useState<Profile>("working");
   const [days, setDays] = useState<number>(7);
+  const [customDays, setCustomDays] = useState(false);
   const [coords, setCoords] = useState<Coords | undefined>();
   const [locating, setLocating] = useState(false);
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
@@ -60,7 +63,7 @@ export function BudgetForm({ onSubmit, loading }: Props) {
           diet,
           city,
           profile,
-          days,
+          days: Math.min(MAX_DAYS, Math.max(MIN_DAYS, days)),
           max_per_order: maxPerOrder ? Number(maxPerOrder) : undefined,
           coords,
         });
@@ -89,10 +92,50 @@ export function BudgetForm({ onSubmit, loading }: Props) {
         {/* 02 · Days */}
         <Section step="02" label="How many days">
           <Segmented
-            options={DAY_OPTIONS.map((n) => ({ value: n, label: `${n} days` }))}
-            value={days}
-            onChange={setDays}
+            options={[
+              ...DAY_PRESETS.map((n) => ({ value: String(n), label: `${n} days` })),
+              { value: "custom", label: "Custom" },
+            ]}
+            value={customDays ? "custom" : String(days)}
+            onChange={(v) => {
+              if (v === "custom") {
+                setCustomDays(true);
+              } else {
+                setCustomDays(false);
+                setDays(Number(v));
+              }
+            }}
           />
+          {customDays && (
+            <div className="mt-2.5 flex items-center gap-3">
+              <div className="flex items-center rounded-xl border border-[var(--border)] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setDays((d) => Math.max(MIN_DAYS, d - 1))}
+                  disabled={days <= MIN_DAYS}
+                  className="px-3.5 py-2 text-lg font-semibold text-[var(--fg-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                  aria-label="Fewer days"
+                >
+                  −
+                </button>
+                <span className="w-16 text-center font-mono text-sm font-semibold tabular-nums border-x border-[var(--border)] py-2">
+                  {days} {days === 1 ? "day" : "days"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDays((d) => Math.min(MAX_DAYS, d + 1))}
+                  disabled={days >= MAX_DAYS}
+                  className="px-3.5 py-2 text-lg font-semibold text-[var(--fg-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                  aria-label="More days"
+                >
+                  +
+                </button>
+              </div>
+              <span className="text-xs text-[var(--fg-muted)]">
+                {MIN_DAYS} to {MAX_DAYS} days. Week plans start Monday.
+              </span>
+            </div>
+          )}
         </Section>
 
         {/* 03 · Who & diet */}

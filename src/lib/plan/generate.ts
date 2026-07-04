@@ -145,7 +145,9 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
 
   const foodOrders: FoodOrderLine[] = [];
   const orderWhys = new Map<number, string>();
+  const savingsTips: string[] = [];
   let orderTotalCost = 0;
+  let orderDeliveryFees = 0;
   let runningTotal = dineoutCost;
 
   for (let i = 0; i < orderDayIdxs.length && i < picks.length; i++) {
@@ -163,7 +165,14 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
       final_cost: cost.landed,
     });
     orderTotalCost += cost.landed;
+    orderDeliveryFees += cost.delivery_fee;
     runningTotal += cost.landed;
+
+    if (cost.coupon) {
+      savingsTips.push(
+        `Apply ${cost.coupon.code} at checkout on Day ${dayNum} (${item.name} from ${restaurantName}). It knocks ₹${cost.discount} off and is already priced into the plan.`,
+      );
+    }
 
     const rank = ranked.findIndex((r) => r.item.id === item.id) + 1;
     const breakdown = `₹${cost.item_price} + ₹${cost.delivery_fee} delivery + ₹${cost.platform_fee} platform${
@@ -266,6 +275,23 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
 
   const totalCost = schedule.reduce((sum, d) => sum + d.cost, 0);
 
+  // ── 6. Save-more tips grounded in this plan's picks ──────────
+  if (dineoutBooking) {
+    savingsTips.push(
+      `Pay the bill through the Swiggy Dineout app at ${dineoutBooking.restaurant}. That is what locks the ${dineoutBooking.discount_percent}% happy-hour rate; paying cash at the counter usually forfeits it.`,
+    );
+  }
+  if (cart.lines.length > 1) {
+    savingsTips.push(
+      `Order the full Instamart cart (${cart.lines.length} items) in one go. One delivery for the week is cheaper than ${cart.lines.length} top-up runs.`,
+    );
+  }
+  if (orderDeliveryFees > 0) {
+    savingsTips.push(
+      `On Swiggy One? Delivery fees on the order days total ₹${orderDeliveryFees}. Membership zeroes them and brings the week to ₹${totalCost - orderDeliveryFees}.`,
+    );
+  }
+
   return {
     input: { ...input, days },
     days: schedule,
@@ -278,6 +304,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
     food_orders: foodOrders,
     dineout_booking: dineoutBooking,
     recipes,
+    savings_tips: savingsTips,
     generated_by: "deterministic",
   };
 }

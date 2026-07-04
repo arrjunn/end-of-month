@@ -73,5 +73,8 @@ export interface Plan {
   food_orders: FoodOrderLine[];
   dineout_booking?: DineoutBooking;
   recipes: RecipeForCart[];
+  /** Actionable "save more" tips grounded in this plan's actual picks:
+   *  which coupon to apply where, paying via the Dineout app, membership math. */
+  savings_tips: string[];
   generated_by: "deterministic" | "agent";
 }

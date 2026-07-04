@@ -1,5 +1,5 @@
 import type { Plan, DayPlan, DayType } from "@/lib/plan/types";
-import { PanIcon, BikeIcon, DineIcon, BasketIcon } from "./icons";
+import { PanIcon, BikeIcon, DineIcon, BasketIcon, TagIcon } from "./icons";
 
 interface Props {
   plan: Plan;
@@ -135,6 +135,7 @@ export function PlanView({ plan }: Props) {
 
       {/* ── Annexes ── */}
       <div className="mt-6 space-y-3">
+        {plan.savings_tips.length > 0 && <SaveMore tips={plan.savings_tips} />}
         {plan.recipes.length > 0 && <Recipes plan={plan} />}
         <Cart plan={plan} />
         {plan.dineout_booking && <Booking plan={plan} />}
@@ -207,6 +208,34 @@ function DayRow({ d, index, last }: { d: DayPlan; index: number; last: boolean }
 }
 
 /* ── Annex cards ──────────────────────────────────────────────── */
+
+function SaveMore({ tips }: { tips: string[] }) {
+  return (
+    <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] overflow-hidden">
+      <div className="px-5 py-4 border-b border-[var(--border)] flex items-center gap-3">
+        <span className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+          <TagIcon className="w-4.5 h-4.5" />
+        </span>
+        <div>
+          <div className="text-sm font-semibold">Save more</div>
+          <div className="text-xs text-[var(--fg-muted)]">
+            how to execute this plan at the best price
+          </div>
+        </div>
+      </div>
+      <ul className="divide-y divide-[var(--border)]">
+        {tips.map((tip, i) => (
+          <li key={i} className="px-5 py-3 flex gap-3 items-start">
+            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0" />
+            <p className="text-xs sm:text-sm text-[var(--fg-muted)] leading-relaxed">
+              {tip}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 function Recipes({ plan }: { plan: Plan }) {
   return (
