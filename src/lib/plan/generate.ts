@@ -39,6 +39,20 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
   const remainingDays = days - dineoutDays;
   const orderDays = Math.max(1, Math.round(remainingDays * 0.3));
 
+  // ── 0.5 Payday awareness ─────────────────────────────────────
+  // v0 simplification: plan Day 1 is treated as today for payday math.
+  let daysToPayday: number | undefined;
+  if (input.payday_day) {
+    const now = new Date();
+    const today = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    daysToPayday =
+      input.payday_day > today
+        ? input.payday_day - today
+        : input.payday_day - today + daysInMonth;
+  }
+  const paydayInPlan = daysToPayday != null && daysToPayday < days;
+
   // ── 1. Dineout slot (target: ≤40% of budget) ─────────────────
   // The per-order cap applies to the booking too — it's a hard constraint.
   const fortyPercentCap = Math.round(input.budget * 0.4);
@@ -62,7 +76,12 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
       const best = dineoutMCP.pickBestSlotUnderBudget(slots, dineoutBudgetCap);
       if (best) {
         const restaurantFull = DINEOUT_RESTAURANTS.find((d) => d.id === r.id);
-        dineoutDayIdx = Math.floor(days / 2); // middle-ish day (0-based)
+        // Middle-ish day; when payday falls inside the plan, push the
+        // night out to on or after it so the splurge lands on a full account.
+        dineoutDayIdx = Math.floor(days / 2);
+        if (paydayInPlan && daysToPayday != null) {
+          dineoutDayIdx = Math.min(days - 1, Math.max(dineoutDayIdx, daysToPayday));
+        }
         dineoutBooking = {
           day: dineoutDayIdx + 1,
           restaurant: r.name,
@@ -190,11 +209,13 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
     cookDays: actualCookDays,
     budget: cookBudget,
     diet: input.diet,
+    ownedSkus: input.pantry_skus,
   });
 
   // ── 4. Stitch the schedule ───────────────────────────────────
   const schedule: DayPlan[] = [];
-  const cartSkus = new Set(cart.lines.map((l) => l.sku));
+  // Recipes can cook from the cart plus whatever the pantry already holds
+  const cartSkus = new Set([...cart.lines.map((l) => l.sku), ...(input.pantry_skus ?? [])]);
   const perMealCost = cart.serves > 0 ? Math.round(cart.total / cart.serves) : 0;
 
   for (let i = 0; i < days; i++) {
@@ -244,8 +265,12 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
       cost: isFirstCookDay ? cart.total : 0,
       source: "Instamart",
       why:
-        isFirstCookDay && cart.lines.length > 0
-          ? `₹${cart.total} cart covers ~${cart.serves} meals (≈₹${perMealCost}/meal). No delivery or platform fees on cook days.`
+        isFirstCookDay && (cart.lines.length > 0 || cart.pantrySaved > 0)
+          ? `₹${cart.total} cart covers ~${cart.serves} meals (≈₹${perMealCost}/meal). No delivery or platform fees on cook days.${
+              cart.pantrySaved > 0
+                ? ` Your pantry covered ₹${cart.pantrySaved} of staples.`
+                : ""
+            }`
           : undefined,
     });
   }
@@ -291,6 +316,18 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
       `On Swiggy One? Delivery fees on the order days total ₹${orderDeliveryFees}. Membership zeroes them and brings the week to ₹${totalCost - orderDeliveryFees}.`,
     );
   }
+  if (cart.pantrySaved > 0) {
+    savingsTips.push(
+      `Your pantry covered ₹${cart.pantrySaved} of staples this week. Mark what's left again next time and the cart keeps shrinking.`,
+    );
+  }
+  if (daysToPayday != null) {
+    savingsTips.push(
+      paydayInPlan
+        ? `Payday lands on day ${daysToPayday + 1} of this plan. The tight days come first and the night out sits after the account refills.`
+        : `Payday is ${daysToPayday} days away, after this plan ends. What this plan saves is runway until then.`,
+    );
+  }
 
   return {
     input: { ...input, days },
@@ -300,6 +337,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
       lines: cart.lines,
       total: cart.total,
       serves_meals: cart.serves,
+      pantry_saved: cart.pantrySaved,
     },
     food_orders: foodOrders,
     dineout_booking: dineoutBooking,

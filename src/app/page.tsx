@@ -8,6 +8,15 @@ import { PanicPane } from "@/components/PanicPane";
 import { BikeIcon, BasketIcon, DineIcon } from "@/components/icons";
 import type { Plan, PlanInput } from "@/lib/plan/types";
 import type { PanicInput, PanicResult } from "@/lib/plan/panic";
+import {
+  readStore,
+  writeStore,
+  PANTRY_KEY,
+  HISTORY_KEY,
+  EMPTY_STRINGS,
+  EMPTY_HISTORY,
+  type HistoryEntry,
+} from "@/lib/store";
 
 export default function Home() {
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -59,7 +68,11 @@ export default function Home() {
         fetch("/api/plan", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(input),
+          // Pantry rides along on every plan: week 2 is cheaper than week 1
+          body: JSON.stringify({
+            ...input,
+            pantry_skus: readStore(PANTRY_KEY, EMPTY_STRINGS),
+          }),
         }),
         new Promise((resolve) => setTimeout(resolve, 1600)),
       ]);
@@ -68,6 +81,20 @@ export default function Home() {
       setPlan(data);
       setMode("plan");
       setFormCollapsed(true);
+
+      const history = readStore<HistoryEntry[]>(HISTORY_KEY, EMPTY_HISTORY);
+      writeStore(
+        HISTORY_KEY,
+        [
+          ...history,
+          {
+            ts: Date.now(),
+            budget: data.input.budget,
+            total_cost: data.total_cost,
+            days: data.input.days,
+          },
+        ].slice(-52),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {

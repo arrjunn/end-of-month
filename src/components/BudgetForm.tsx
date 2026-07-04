@@ -5,6 +5,7 @@ import type { PlanInput } from "@/lib/plan/types";
 import type { PanicInput } from "@/lib/plan/panic";
 import type { Diet, Profile, Coords } from "@/lib/mcp/types";
 import { getCurrentPosition, reverseGeocode } from "@/lib/location";
+import { useStoreValue, writeStore, PAYDAY_KEY } from "@/lib/store";
 import { CityCombobox } from "./CityCombobox";
 
 const DIETS: { value: Diet; label: string }[] = [
@@ -39,6 +40,8 @@ export function BudgetForm({ onSubmit, onPanic, loading }: Props) {
   const [locating, setLocating] = useState(false);
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  // Payday persists across visits; the store is the single source of truth
+  const payday = useStoreValue<number | null>(PAYDAY_KEY, null);
 
   async function detectLocation() {
     setLocating(true);
@@ -67,6 +70,7 @@ export function BudgetForm({ onSubmit, onPanic, loading }: Props) {
           profile,
           days: Math.min(MAX_DAYS, Math.max(MIN_DAYS, days)),
           max_per_order: maxPerOrder ? Number(maxPerOrder) : undefined,
+          payday_day: payday ?? undefined,
           coords,
         });
       }}
@@ -252,6 +256,27 @@ export function BudgetForm({ onSubmit, onPanic, loading }: Props) {
             </div>
             <span className="text-xs text-[var(--fg-muted)]">
               per-order cap. No single order or booking can exceed this.
+            </span>
+          </div>
+          <div className="mt-3 flex items-center gap-3">
+            <input
+              type="number"
+              min={1}
+              max={31}
+              value={payday ?? ""}
+              onChange={(e) =>
+                writeStore(
+                  PAYDAY_KEY,
+                  e.target.value
+                    ? Math.min(31, Math.max(1, Number(e.target.value)))
+                    : null,
+                )
+              }
+              placeholder="day"
+              className="no-spinner font-mono text-sm bg-transparent border-b-2 border-[var(--border)] focus:border-[var(--accent)] outline-none w-20 py-1 transition-colors"
+            />
+            <span className="text-xs text-[var(--fg-muted)]">
+              payday day of month. The plan places the night out after it.
             </span>
           </div>
         </details>
