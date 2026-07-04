@@ -4,10 +4,11 @@
 @variant dark (&:where(.dark, .dark *));
 
 /* ──────────────────────────────────────────────────────────────
-   Swiggy brand palette (per Mobbin design tokens)
-     Paarl       #AD4728  — deep, headline-emphasis, progress fills
-     Neon Carrot #FD9139  — primary CTA, active states
-     Tan Hide    #FCA65E  — soft chips, dark-mode hover-light
+   Swiggy brand palette
+     Brand Orange #FF5200  — Swiggy's current brand color; primary CTA,
+                             active states, hero band
+     Paarl        #AD4728  — deep support, headline-emphasis
+     Tan Hide     #FCA65E  — soft chips, dark-mode hover-light
    ────────────────────────────────────────────────────────────── */
 
 :root {
@@ -27,9 +28,9 @@
 
   /* Brand */
   --brand-deep: #ad4728; /* Paarl */
-  --accent: #fd9139; /* Neon Carrot — primary CTA */
-  --accent-hover: #ad4728; /* Hover deepens to Paarl */
-  --accent-soft: rgba(252, 166, 94, 0.22); /* Tan Hide @ 22% */
+  --accent: #ff5200; /* Swiggy brand orange — primary CTA */
+  --accent-hover: #e04800; /* pressed/hover darkens slightly */
+  --accent-soft: rgba(255, 82, 0, 0.1);
   --brand-warm: #fca65e; /* Tan Hide */
 
   /* Semantic (Swiggy conventions) */
@@ -54,13 +55,13 @@
   --border: #2a231e;
   --border-strong: #3a3026;
 
-  /* In dark mode, Neon Carrot reads better as primary;
-     Tan Hide brightens for hover (opposite direction from light mode).
+  /* In dark mode the brand orange lifts a touch for legibility;
+     hover brightens (opposite direction from light mode).
      Paarl shifts to a lifted variant for legibility on dark. */
   --brand-deep: #d85837; /* lifted Paarl */
-  --accent: #fd9139;
-  --accent-hover: #fca65e; /* Tan Hide lifts the hover */
-  --accent-soft: rgba(253, 145, 57, 0.18);
+  --accent: #ff6d26; /* lifted brand orange */
+  --accent-hover: #ff8747;
+  --accent-soft: rgba(255, 109, 38, 0.16);
   --brand-warm: #fca65e;
 
   --rating-green: #4cb37b;
@@ -110,4 +111,104 @@ body {
 
 html {
   color-scheme: light dark;
+}
+
+/* ── Receipt & app-shell utilities ───────────────────────────── */
+
+/* Zigzag "torn paper" edge for the week receipt. Applied to a small
+   ::before/::after strip via these standalone classes. */
+.receipt-edge-top,
+.receipt-edge-bottom {
+  height: 10px;
+  background-color: var(--bg-elevated);
+}
+.receipt-edge-top {
+  mask: radial-gradient(circle at 10px 0, transparent 7px, black 7.5px) -10px 0 / 20px
+    100%;
+}
+.receipt-edge-bottom {
+  mask: radial-gradient(circle at 10px 10px, transparent 7px, black 7.5px) -10px 0 /
+    20px 100%;
+}
+
+/* Swiggy-style coupon ticket chip: dashed border + punched notches */
+.coupon-ticket {
+  position: relative;
+  border: 1.5px dashed var(--accent);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  padding: 1px 10px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.dark .coupon-ticket {
+  color: var(--brand-warm);
+}
+
+/* Staggered row entrance for the receipt */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.row-in {
+  animation: row-in 0.35s ease-out both;
+}
+
+/* Skeleton shimmer for the loading receipt */
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-subtle) 25%,
+    var(--border) 50%,
+    var(--bg-subtle) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+/* Agent progress message swap */
+@keyframes fade-swap {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  15%,
+  85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Hide number-input spinners on the hero budget field */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

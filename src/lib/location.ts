@@ -107,7 +107,7 @@ export async function reverseGeocode(coords: { lat: number; lng: number }): Prom
     return {
       city: nearest.city,
       state: nearest.state,
-      display: `${nearest.city} (approx — ${nearest.distance_km.toFixed(1)} km from city center)`,
+      display: `${nearest.city} (approx, ${nearest.distance_km.toFixed(1)} km from city center)`,
     };
   }
 }
