@@ -88,10 +88,17 @@ export function PlanView({ plan }: Props) {
             </div>
           </div>
 
-          {/* Day rows on a timeline rail */}
+          {/* Day rows on a timeline rail. Plans start Monday, so today's
+              weekday index marks the current row when the plan covers it. */}
           <ul className="pt-2">
             {plan.days.map((d, i) => (
-              <DayRow key={d.day} d={d} index={i} last={i === plan.days.length - 1} />
+              <DayRow
+                key={d.day}
+                d={d}
+                index={i}
+                last={i === plan.days.length - 1}
+                isToday={i === (new Date().getDay() + 6) % 7}
+              />
             ))}
           </ul>
 
@@ -146,11 +153,23 @@ export function PlanView({ plan }: Props) {
 
 /* ── Receipt rows ─────────────────────────────────────────────── */
 
-function DayRow({ d, index, last }: { d: DayPlan; index: number; last: boolean }) {
+function DayRow({
+  d,
+  index,
+  last,
+  isToday,
+}: {
+  d: DayPlan;
+  index: number;
+  last: boolean;
+  isToday: boolean;
+}) {
   const t = TYPE_META[d.type];
   return (
     <li
-      className="row-in grid grid-cols-[2.5rem_1fr_auto] gap-x-3"
+      className={`row-in grid grid-cols-[2.5rem_1fr_auto] gap-x-3 ${
+        isToday ? "bg-[var(--accent-soft)] rounded-xl px-2 -mx-2 pt-2" : ""
+      }`}
       style={{ animationDelay: `${index * 60}ms` }}
     >
       {/* Timeline rail */}
@@ -169,6 +188,11 @@ function DayRow({ d, index, last }: { d: DayPlan; index: number; last: boolean }
           <span className="font-mono text-[11px] uppercase text-[var(--fg-faint)]">
             Day {d.day} · {d.weekday}
           </span>
+          {isToday && (
+            <span className="px-1.5 py-px rounded text-[10px] font-bold uppercase tracking-wide bg-[var(--accent)] text-white">
+              Today
+            </span>
+          )}
           <span className={`px-1.5 py-px rounded text-[10px] font-bold uppercase tracking-wide ${t.chip}`}>
             {t.label}
           </span>

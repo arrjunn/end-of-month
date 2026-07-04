@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { PlanInput } from "@/lib/plan/types";
+import type { PanicInput } from "@/lib/plan/panic";
 import type { Diet, Profile, Coords } from "@/lib/mcp/types";
 import { getCurrentPosition, reverseGeocode } from "@/lib/location";
 import { CityCombobox } from "./CityCombobox";
@@ -22,10 +23,11 @@ const MAX_DAYS = 7;
 
 interface Props {
   onSubmit: (input: PlanInput) => void;
+  onPanic: (params: PanicInput) => void;
   loading: boolean;
 }
 
-export function BudgetForm({ onSubmit, loading }: Props) {
+export function BudgetForm({ onSubmit, onPanic, loading }: Props) {
   const [budget, setBudget] = useState(600);
   const [maxPerOrder, setMaxPerOrder] = useState("");
   const [diet, setDiet] = useState<Diet>("veg");
@@ -256,13 +258,26 @@ export function BudgetForm({ onSubmit, loading }: Props) {
       </div>
 
       {/* CTA */}
-      <div className="p-4 sm:p-5 pt-0">
+      <div className="p-4 sm:p-5 pt-0 space-y-2">
         <button
           type="submit"
           disabled={loading}
           className="font-display w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold py-3.5 rounded-xl disabled:opacity-60 transition-colors text-base tracking-wide shadow-[var(--shadow-card)]"
         >
           {loading ? "Planning your week…" : "Plan my week"}
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            onPanic({
+              budget: Math.max(50, Math.round(budget / Math.max(1, days))),
+              diet,
+              city,
+            })
+          }
+          className="w-full py-2.5 rounded-xl border border-[var(--discount-red)]/40 text-[var(--discount-red)] text-sm font-semibold hover:bg-[var(--discount-red)]/10 transition-colors"
+        >
+          9pm panic? Feed me now
         </button>
       </div>
     </form>
