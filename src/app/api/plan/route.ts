@@ -9,6 +9,8 @@ const PlanRequest = z.object({
   profile: z.enum(["hostel", "working", "family"]),
   days: z.number().int().min(2).max(7),
   max_per_order: z.number().int().min(50).max(5000).optional(),
+  pantry_skus: z.array(z.string().max(60)).max(50).optional(),
+  payday_day: z.number().int().min(1).max(31).optional(),
   coords: z
     .object({ lat: z.number(), lng: z.number() })
     .optional(),

@@ -1,4 +1,5 @@
 import type { Plan, DayPlan, DayType } from "@/lib/plan/types";
+import { useStoreValue, writeStore, PANTRY_KEY, EMPTY_STRINGS } from "@/lib/store";
 import { PanIcon, BikeIcon, DineIcon, BasketIcon, TagIcon } from "./icons";
 
 interface Props {
@@ -300,6 +301,13 @@ function Recipes({ plan }: { plan: Plan }) {
 }
 
 function Cart({ plan }: { plan: Plan }) {
+  const pantry = useStoreValue(PANTRY_KEY, EMPTY_STRINGS);
+  const toggle = (sku: string) =>
+    writeStore(
+      PANTRY_KEY,
+      pantry.includes(sku) ? pantry.filter((s) => s !== sku) : [...pantry, sku],
+    );
+
   return (
     <details className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] overflow-hidden group">
       <summary className="px-5 py-4 cursor-pointer select-none flex items-center gap-3">
@@ -311,20 +319,43 @@ function Cart({ plan }: { plan: Plan }) {
           <div className="text-xs text-[var(--fg-muted)]">
             {plan.instamart_cart.lines.length} items · ₹{plan.instamart_cart.total} · ~
             {plan.instamart_cart.serves_meals} meals
+            {plan.instamart_cart.pantry_saved > 0 &&
+              ` · ₹${plan.instamart_cart.pantry_saved} from pantry`}
           </div>
         </div>
         <span className="text-[var(--fg-muted)] group-open:rotate-180 transition-transform">
           ▾
         </span>
       </summary>
-      <ul className="px-5 pb-4 divide-y divide-[var(--border)] text-sm border-t border-[var(--border)]">
-        {plan.instamart_cart.lines.map((line) => (
-          <li key={line.sku} className="py-2 flex justify-between font-mono">
-            <span>{line.name}</span>
-            <span className="text-[var(--fg-muted)] tabular-nums">₹{line.price}</span>
-          </li>
-        ))}
-      </ul>
+      <div className="px-5 pb-4 border-t border-[var(--border)]">
+        <p className="text-xs text-[var(--fg-muted)] pt-3">
+          Mark staples you already have. The next plan skips them and the cart gets
+          cheaper.
+        </p>
+        <ul className="divide-y divide-[var(--border)] text-sm">
+          {plan.instamart_cart.lines.map((line) => {
+            const owned = pantry.includes(line.sku);
+            return (
+              <li key={line.sku} className="py-2 flex items-center gap-3">
+                <span className="flex-1 font-mono min-w-0 truncate">{line.name}</span>
+                <span className="text-[var(--fg-muted)] tabular-nums font-mono">
+                  ₹{line.price}
+                </span>
+                <button
+                  onClick={() => toggle(line.sku)}
+                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap ${
+                    owned
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                      : "border border-[var(--border)] text-[var(--fg-muted)] hover:border-[var(--border-strong)]"
+                  }`}
+                >
+                  {owned ? "in pantry ✓" : "have it?"}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </details>
   );
 }

@@ -1,4 +1,12 @@
+"use client";
+
 import type { Plan } from "@/lib/plan/types";
+import {
+  useStoreValue,
+  HISTORY_KEY,
+  PAYDAY_KEY,
+  EMPTY_HISTORY,
+} from "@/lib/store";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
@@ -20,7 +28,9 @@ export function TopNav({ plan }: Props) {
         {plan && <BurnDown plan={plan} />}
 
         <div className="flex items-center gap-3 shrink-0">
-          <span className="hidden md:inline text-xs text-[var(--fg-muted)]">
+          <SavingsChip />
+          <PaydayChip />
+          <span className="hidden lg:inline text-xs text-[var(--fg-muted)]">
             built on Swiggy MCP
           </span>
           <ThemeToggle />
@@ -53,6 +63,33 @@ function BurnDown({ plan }: { plan: Plan }) {
         <span className="text-[var(--fg-muted)]">/₹{plan.input.budget}</span>
       </span>
     </div>
+  );
+}
+
+/** Lifetime savings across generated plans (localStorage, roadmap #15). */
+function SavingsChip() {
+  const history = useStoreValue(HISTORY_KEY, EMPTY_HISTORY);
+  const saved = history.reduce((s, h) => s + Math.max(0, h.budget - h.total_cost), 0);
+  if (saved <= 0) return null;
+  return (
+    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--rating-green)]/10 text-[var(--rating-green)] text-xs font-semibold whitespace-nowrap">
+      ₹{saved} saved · {history.length} {history.length === 1 ? "plan" : "plans"}
+    </span>
+  );
+}
+
+/** Days until salary lands (roadmap #11). Client-only via the store hook. */
+function PaydayChip() {
+  const payday = useStoreValue<number | null>(PAYDAY_KEY, null);
+  if (!payday) return null;
+  const now = new Date();
+  const today = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysTo = payday > today ? payday - today : payday - today + daysInMonth;
+  return (
+    <span className="hidden md:inline text-xs text-[var(--fg-muted)] whitespace-nowrap">
+      payday in {daysTo}d
+    </span>
   );
 }
 
