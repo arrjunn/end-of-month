@@ -35,9 +35,21 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
   const days = Math.min(7, Math.max(2, input.days));
 
   // ── 0. Decide day-type counts ────────────────────────────────
-  const dineoutDays = days >= 4 ? 1 : 0;
+  // Templates reshape the mix over the same planner: exam = delivery
+  // heavy with no night out, guests = one splurge dineout on a raised
+  // cap, recovery = nearly all cook days.
+  const template = input.template;
+  let dineoutDays = days >= 4 ? 1 : 0;
+  let dineoutCapFraction = 0.4;
+  if (template === "exam" || template === "recovery") dineoutDays = 0;
+  if (template === "guests") {
+    dineoutDays = days >= 2 ? 1 : 0;
+    dineoutCapFraction = 0.5;
+  }
   const remainingDays = days - dineoutDays;
-  const orderDays = Math.max(1, Math.round(remainingDays * 0.3));
+  let orderDays = Math.max(1, Math.round(remainingDays * 0.3));
+  if (template === "exam") orderDays = Math.max(1, Math.round(remainingDays * 0.6));
+  if (template === "recovery") orderDays = 1;
 
   // ── 0.5 Payday awareness ─────────────────────────────────────
   // v0 simplification: plan Day 1 is treated as today for payday math.
@@ -53,9 +65,9 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
   }
   const paydayInPlan = daysToPayday != null && daysToPayday < days;
 
-  // ── 1. Dineout slot (target: ≤40% of budget) ─────────────────
+  // ── 1. Dineout slot (target: ≤ cap fraction of budget) ───────
   // The per-order cap applies to the booking too — it's a hard constraint.
-  const fortyPercentCap = Math.round(input.budget * 0.4);
+  const fortyPercentCap = Math.round(input.budget * dineoutCapFraction);
   const dineoutBudgetCap = Math.min(fortyPercentCap, input.max_per_order ?? Infinity);
   let dineoutBooking: DineoutBooking | undefined;
   let dineoutCost = 0;
@@ -96,7 +108,9 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
         };
         dineoutCost = best.cost_per_person_after_discount;
         dineoutWhy = `${best.discount_percent}% happy-hour slot at ₹${best.cost_per_person_after_discount}/person, under the ₹${dineoutBudgetCap} dineout cap${
-          dineoutBudgetCap === fortyPercentCap ? " (40% of weekly budget)" : " (your per-order cap)"
+          dineoutBudgetCap === fortyPercentCap
+            ? ` (${Math.round(dineoutCapFraction * 100)}% of weekly budget)`
+            : " (your per-order cap)"
         }.`;
         break;
       }
@@ -320,6 +334,14 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
     savingsTips.push(
       `Your pantry covered ₹${cart.pantrySaved} of staples this week. Mark what's left again next time and the cart keeps shrinking.`,
     );
+  }
+  if (template) {
+    const templateNote = {
+      exam: "Exam week mix: delivery heavy on purpose. Coupons and landed-cost ranking keep it survivable.",
+      guests: `Guests week: the dineout cap is raised to ${Math.round(dineoutCapFraction * 100)}% of the budget for one good table.`,
+      recovery: "Recovery week: nearly all cook days. The single order day is the pressure valve.",
+    }[template];
+    savingsTips.push(templateNote);
   }
   if (daysToPayday != null) {
     savingsTips.push(

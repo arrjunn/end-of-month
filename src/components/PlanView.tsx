@@ -1,10 +1,23 @@
-import type { Plan, DayPlan, DayType } from "@/lib/plan/types";
+"use client";
+
+import { useRef, useState } from "react";
+import type { Plan, DayPlan, DayType, WeekTemplate } from "@/lib/plan/types";
 import { useStoreValue, writeStore, PANTRY_KEY, EMPTY_STRINGS } from "@/lib/store";
 import { PanIcon, BikeIcon, DineIcon, BasketIcon, TagIcon } from "./icons";
 
 interface Props {
   plan: Plan;
+  /** Anchor budget for the what-if slider (the last submitted budget). */
+  whatIfBase?: number | null;
+  whatIfBusy?: boolean;
+  onWhatIf?: (budget: number) => void;
 }
+
+const TEMPLATE_LABEL: Record<WeekTemplate, string> = {
+  exam: "exam week",
+  guests: "guests over",
+  recovery: "recovery week",
+};
 
 const TYPE_META: Record<
   DayType,
@@ -35,7 +48,7 @@ const TYPE_META: Record<
   },
 };
 
-export function PlanView({ plan }: Props) {
+export function PlanView({ plan, whatIfBase, whatIfBusy, onWhatIf }: Props) {
   const pct = Math.min(100, Math.round((plan.total_cost / plan.input.budget) * 100));
   const remaining = plan.input.budget - plan.total_cost;
   const pace =
@@ -46,7 +59,7 @@ export function PlanView({ plan }: Props) {
         : "var(--discount-red)";
 
   return (
-    <section>
+    <section className={`transition-opacity duration-200 ${whatIfBusy ? "opacity-60" : ""}`}>
       {/* ── The week receipt ── */}
       <div className="drop-shadow-[0_8px_24px_rgba(40,44,63,0.10)] dark:drop-shadow-[0_12px_32px_rgba(0,0,0,0.5)]">
         <div className="receipt-edge-top" />
@@ -61,6 +74,7 @@ export function PlanView({ plan }: Props) {
             </div>
             <div className="text-xs text-[var(--fg-muted)] mt-0.5 capitalize">
               {plan.input.city} · {plan.input.diet}
+              {plan.input.template ? ` · ${TEMPLATE_LABEL[plan.input.template]}` : ""}
             </div>
 
             {/* Budget burn-down */}
@@ -87,6 +101,15 @@ export function PlanView({ plan }: Props) {
                 {pct}% used
               </span>
             </div>
+
+            {onWhatIf && whatIfBase != null && (
+              <WhatIf
+                key={plan.input.budget}
+                base={whatIfBase}
+                current={plan.input.budget}
+                onChange={onWhatIf}
+              />
+            )}
           </div>
 
           {/* Day rows on a timeline rail. Plans start Monday, so today's
@@ -149,6 +172,60 @@ export function PlanView({ plan }: Props) {
         {plan.dineout_booking && <Booking plan={plan} />}
       </div>
     </section>
+  );
+}
+
+/* ── What-if slider ───────────────────────────────────────────── */
+// Drag the budget and watch the week rebalance. Debounced so we only
+// replan when the thumb settles; keyed on plan budget so it resyncs
+// after each replan.
+
+function WhatIf({
+  base,
+  current,
+  onChange,
+}: {
+  base: number;
+  current: number;
+  onChange: (budget: number) => void;
+}) {
+  const [val, setVal] = useState(current);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const min = Math.max(200, Math.round((base * 0.6) / 10) * 10);
+  const max = Math.min(10000, Math.round((base * 1.4) / 10) * 10);
+
+  return (
+    <div className="mt-4 text-left">
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)]">
+          What if the budget were
+        </span>
+        <span className="font-mono text-sm font-bold tabular-nums text-[var(--accent)]">
+          ₹{val}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={10}
+        value={val}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          setVal(v);
+          if (timer.current) clearTimeout(timer.current);
+          timer.current = setTimeout(() => {
+            if (v !== current) onChange(v);
+          }, 350);
+        }}
+        className="w-full accent-[var(--accent)] cursor-pointer"
+        aria-label="What-if budget"
+      />
+      <div className="flex justify-between text-[10px] text-[var(--fg-faint)] font-mono mt-0.5">
+        <span>₹{min}</span>
+        <span>₹{max}</span>
+      </div>
+    </div>
   );
 }
 
