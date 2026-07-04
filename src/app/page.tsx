@@ -110,18 +110,10 @@ function HeroBand({ compact }: { compact: boolean }) {
           End of month? <span className="text-white/80">Plan it.</span>
         </h1>
         {!compact && (
-          <>
-            <p className="mt-3 text-white/90 text-sm sm:text-base max-w-2xl">
-              ₹600 left till payday? Tell it your budget and it plans every meal of
-              the week — which days you cook from one cheap Instamart cart, which
-              days you order in (picked by what food really costs after fees and
-              coupons), and one night out that still fits.
-            </p>
-            <p className="mt-2 text-white/70 text-xs sm:text-sm max-w-2xl">
-              Stays under your budget, shows the math for every pick — one agent
-              across Swiggy Food, Instamart, and Dineout.
-            </p>
-          </>
+          <p className="mt-3 text-white/90 text-sm sm:text-base max-w-xl">
+            Give it your food budget. It plans every meal of the week — cook, order
+            in, or dine out — and shows the math for every pick.
+          </p>
         )}
       </div>
     </div>
