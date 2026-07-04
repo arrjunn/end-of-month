@@ -24,11 +24,18 @@ export interface PlanInput {
   /** Day of month salary lands (roadmap #11). The planner places the
    *  night out after it when the plan spans payday. */
   payday_day?: number;
+  /** Optional week template shaping the day mix. */
+  template?: WeekTemplate;
   /** Optional user coords for travel-time chips on Dineout options. */
   coords?: Coords;
 }
 
 export type DayType = "cook" | "order" | "dineout";
+
+/** Week templates (roadmap #20): presets over the same planner.
+ *  exam = max delivery min effort, guests = one splurge night out,
+ *  recovery = post-festival austerity. */
+export type WeekTemplate = "exam" | "guests" | "recovery";
 
 export interface DayPlan {
   day: number; // 1-based, capped to input.days

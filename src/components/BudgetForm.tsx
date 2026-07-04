@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PlanInput } from "@/lib/plan/types";
+import type { PlanInput, WeekTemplate } from "@/lib/plan/types";
 import type { PanicInput } from "@/lib/plan/panic";
 import type { Diet, Profile, Coords } from "@/lib/mcp/types";
 import { getCurrentPosition, reverseGeocode } from "@/lib/location";
@@ -21,6 +21,12 @@ const PROFILES: { value: Profile; label: string; sub: string }[] = [
 const DAY_PRESETS = [3, 5, 7];
 const MIN_DAYS = 2;
 const MAX_DAYS = 7;
+
+const TEMPLATES: { value: WeekTemplate; label: string; sub: string }[] = [
+  { value: "exam", label: "Exam week", sub: "max delivery, min effort" },
+  { value: "guests", label: "Guests over", sub: "one splurge night out" },
+  { value: "recovery", label: "Recovery week", sub: "cook almost everything" },
+];
 
 interface Props {
   onSubmit: (input: PlanInput) => void;
@@ -42,6 +48,7 @@ export function BudgetForm({ onSubmit, onPanic, loading }: Props) {
   const [locationError, setLocationError] = useState<string | null>(null);
   // Payday persists across visits; the store is the single source of truth
   const payday = useStoreValue<number | null>(PAYDAY_KEY, null);
+  const [template, setTemplate] = useState<WeekTemplate | undefined>();
 
   async function detectLocation() {
     setLocating(true);
@@ -71,6 +78,7 @@ export function BudgetForm({ onSubmit, onPanic, loading }: Props) {
           days: Math.min(MAX_DAYS, Math.max(MIN_DAYS, days)),
           max_per_order: maxPerOrder ? Number(maxPerOrder) : undefined,
           payday_day: payday ?? undefined,
+          template,
           coords,
         });
       }}
@@ -230,6 +238,30 @@ export function BudgetForm({ onSubmit, onPanic, loading }: Props) {
               city when API access lands.
             </p>
           )}
+        </Section>
+
+        {/* 05 · Week template */}
+        <Section step="05" label="Week template (optional)">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+            {TEMPLATES.map((t) => {
+              const active = template === t.value;
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setTemplate(active ? undefined : t.value)}
+                  className={`text-left px-3 py-2 rounded-xl border transition-all ${
+                    active
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      : "border-[var(--border)] hover:border-[var(--border-strong)]"
+                  }`}
+                >
+                  <span className="block text-sm font-semibold">{t.label}</span>
+                  <span className="block text-xs text-[var(--fg-muted)]">{t.sub}</span>
+                </button>
+              );
+            })}
+          </div>
         </Section>
 
         {/* Advanced */}

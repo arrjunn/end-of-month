@@ -32,6 +32,28 @@ export default function Home() {
   const [panicResult, setPanicResult] = useState<PanicResult | null>(null);
   const [panicLoading, setPanicLoading] = useState(false);
   const [panicError, setPanicError] = useState<string | null>(null);
+  // What-if slider: quiet replans anchored to the last submitted budget
+  const [whatIfBase, setWhatIfBase] = useState<number | null>(null);
+  const [whatIfBusy, setWhatIfBusy] = useState(false);
+
+  async function handleWhatIf(budget: number) {
+    if (!plan) return;
+    setWhatIfBusy(true);
+    try {
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...plan.input,
+          budget,
+          pantry_skus: readStore(PANTRY_KEY, EMPTY_STRINGS),
+        }),
+      });
+      if (res.ok) setPlan(await res.json());
+    } finally {
+      setWhatIfBusy(false);
+    }
+  }
 
   async function searchPanic(params: PanicInput) {
     setPanicLoading(true);
@@ -81,6 +103,7 @@ export default function Home() {
       setPlan(data);
       setMode("plan");
       setFormCollapsed(true);
+      setWhatIfBase(data.input.budget);
 
       const history = readStore<HistoryEntry[]>(HISTORY_KEY, EMPTY_HISTORY);
       writeStore(
@@ -152,7 +175,12 @@ export default function Home() {
             ) : loading ? (
               <AgentProgress />
             ) : plan ? (
-              <PlanView plan={plan} />
+              <PlanView
+                plan={plan}
+                whatIfBase={whatIfBase}
+                whatIfBusy={whatIfBusy}
+                onWhatIf={handleWhatIf}
+              />
             ) : (
               <EmptyState />
             )}
