@@ -278,7 +278,7 @@ function FlinchCard() {
   const weekly = monthly ? Math.round(Number(monthly) / 4.33 / 10) * 10 : null;
 
   return (
-    <div className="mb-3 rounded-2xl border border-[var(--accent)]/40 bg-[var(--accent-soft)] p-4">
+    <div className="mb-3 rounded-2xl border border-[var(--accent)]/40 bg-[var(--bg-elevated)] shadow-[var(--shadow-card)] p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="text-sm font-semibold">Quick check before you start</div>
         <button
