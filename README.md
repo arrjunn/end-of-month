@@ -118,6 +118,11 @@ One screen. One plan. Three carts staged.
 - Plans for any 2–7 day stretch (3/5/7 presets plus a custom stepper)
 - "Save more" tips grounded in the plan's actual picks: which coupon to apply on which day, paying through the Swiggy Dineout app to keep the happy-hour rate, batching the Instamart cart, and Swiggy One membership math
 - Roadmap P0 features already in the planner: landed-cost ranking (item + delivery + platform fee − coupon), hard weekly + per-order spend caps, per-day decision receipts, and variety/fatigue scoring
+- Daily hook: a panic button that ranks tonight's best landed-cost options for whatever is left today, with an honest cook fallback when staples win per meal
+- Retention loop: pantry-aware carts (mark staples you still have and week 2 gets cheaper), a lifetime savings counter in the nav, and payday-aware dineout placement
+- What-if budget slider (drag and watch the week rebalance live) and week templates: exam week, guests over, recovery week
+- Mid-week re-plan: pick the day life happened and the money actually left; the agent replans just the remaining days
+- Shareable plain-text week receipt, plus first-visit onboarding that converts monthly Swiggy spend into a weekly number
 
 **v1 — once API keys land**
 - Wire real Food / Instamart / Dineout calls

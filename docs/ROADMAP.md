@@ -40,6 +40,8 @@ Builders Club is explicitly building toward "Skills" — reusable agent capabili
 
 ## 2. Prioritized feature set
 
+> **Status (July 5, 2026):** already live in v0 on the mocked MCP layer: P0 #2, #3, #4, #7; P1 #8 (lite: localStorage pantry, with one-tap "have it" check-ins standing in for #14), #9, #10, #11, #15 (counter, streaks pending); P2 #20 — plus the week-receipt UI, header burn-down bar, flinch onboarding, what-if budget slider, and a shareable receipt. #13 ships partially as a Swiggy One tip on every plan. Still gated on real API keys or a write path: P0 #1, #5, #6; P1 #12; P2 #16, #17, #18, #19, #21.
+
 Legend: **[v0.1]** = from first brainstorm, kept · **[NEW]** = added this round · Effort: S/M/L
 
 ### P0 — Trust & correctness (ship with API keys; blocks everything else)
