@@ -12,6 +12,7 @@ const PlanRequest = z.object({
   pantry_skus: z.array(z.string().max(60)).max(50).optional(),
   payday_day: z.number().int().min(1).max(31).optional(),
   template: z.enum(["exam", "guests", "recovery"]).optional(),
+  start_weekday: z.number().int().min(0).max(6).optional(),
   coords: z
     .object({ lat: z.number(), lng: z.number() })
     .optional(),

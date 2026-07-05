@@ -12,6 +12,8 @@ interface Props {
   whatIfBase?: number | null;
   whatIfBusy?: boolean;
   onWhatIf?: (budget: number) => void;
+  /** Mid-week re-plan: replan remaining days with the remaining budget. */
+  onReplan?: (remainingBudget: number, fromDayIdx: number) => void;
 }
 
 const TEMPLATE_LABEL: Record<WeekTemplate, string> = {
@@ -49,7 +51,7 @@ const TYPE_META: Record<
   },
 };
 
-export function PlanView({ plan, whatIfBase, whatIfBusy, onWhatIf }: Props) {
+export function PlanView({ plan, whatIfBase, whatIfBusy, onWhatIf, onReplan }: Props) {
   const pct = Math.min(100, Math.round((plan.total_cost / plan.input.budget) * 100));
   const remaining = plan.input.budget - plan.total_cost;
   const pace =
@@ -76,6 +78,7 @@ export function PlanView({ plan, whatIfBase, whatIfBusy, onWhatIf }: Props) {
             <div className="text-xs text-[var(--fg-muted)] mt-0.5 capitalize">
               {plan.input.city} · {plan.input.diet}
               {plan.input.template ? ` · ${TEMPLATE_LABEL[plan.input.template]}` : ""}
+              {plan.input.start_weekday ? " · mid-week replan" : ""}
             </div>
 
             {/* Budget burn-down */}
@@ -122,7 +125,10 @@ export function PlanView({ plan, whatIfBase, whatIfBusy, onWhatIf }: Props) {
                 d={d}
                 index={i}
                 last={i === plan.days.length - 1}
-                isToday={i === (new Date().getDay() + 6) % 7}
+                isToday={
+                  ((plan.input.start_weekday ?? 0) + i) % 7 ===
+                  (new Date().getDay() + 6) % 7
+                }
               />
             ))}
           </ul>
@@ -165,8 +171,9 @@ export function PlanView({ plan, whatIfBase, whatIfBusy, onWhatIf }: Props) {
         <div className="receipt-edge-bottom" />
       </div>
 
-      {/* ── Share ── */}
-      <div className="mt-3 flex justify-end">
+      {/* ── Actions ── */}
+      <div className="mt-3 flex items-start justify-between gap-3">
+        {onReplan ? <Replan plan={plan} onReplan={onReplan} /> : <span />}
         <ShareButton plan={plan} />
       </div>
 
@@ -178,6 +185,102 @@ export function PlanView({ plan, whatIfBase, whatIfBusy, onWhatIf }: Props) {
         {plan.dineout_booking && <Booking plan={plan} />}
       </div>
     </section>
+  );
+}
+
+/* ── Mid-week re-plan ─────────────────────────────────────────── */
+// "Life happened": pick the day things changed and what's actually left;
+// the agent replans just the remaining days.
+
+function Replan({
+  plan,
+  onReplan,
+}: {
+  plan: Plan;
+  onReplan: (remainingBudget: number, fromDayIdx: number) => void;
+}) {
+  const maxFrom = plan.input.days - 2; // at least 2 days must remain
+  const start = plan.input.start_weekday ?? 0;
+  const todayOffset = ((((new Date().getDay() + 6) % 7) - start) % 7 + 7) % 7;
+  const defaultFrom = Math.min(Math.max(todayOffset, 1), Math.max(maxFrom, 1));
+  const spentBefore = (idx: number) =>
+    plan.days.slice(0, idx).reduce((s, d) => s + d.cost, 0);
+
+  const [open, setOpen] = useState(false);
+  const [fromIdx, setFromIdx] = useState(defaultFrom);
+  const [amount, setAmount] = useState(
+    Math.max(0, plan.input.budget - spentBefore(defaultFrom)),
+  );
+
+  if (maxFrom < 1) return null;
+  const remaining = plan.input.days - fromIdx;
+  const valid = amount >= 100 && amount <= 10000;
+
+  return (
+    <div className="flex-1 min-w-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] text-xs font-semibold text-[var(--fg-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+      >
+        Life happened? Replan
+        <span className={`text-[9px] transition-transform ${open ? "rotate-180" : ""}`}>
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] shadow-[var(--shadow-card)] p-4 space-y-3">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)] mb-1.5">
+              Replan from
+            </label>
+            <select
+              value={fromIdx}
+              onChange={(e) => {
+                const idx = Number(e.target.value);
+                setFromIdx(idx);
+                setAmount(Math.max(0, plan.input.budget - spentBefore(idx)));
+              }}
+              className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg px-2.5 py-2 text-sm outline-none focus:border-[var(--accent)] transition-colors"
+            >
+              {plan.days.slice(1, maxFrom + 1).map((d, j) => (
+                <option key={d.day} value={j + 1}>
+                  Day {d.day} · {d.weekday}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-[var(--fg-muted)] mb-1.5">
+              Money actually left
+            </label>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[var(--fg-muted)]">₹</span>
+              <input
+                type="number"
+                min={100}
+                max={10000}
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                className="no-spinner font-mono font-semibold bg-transparent border-b-2 border-[var(--border)] focus:border-[var(--accent)] outline-none w-24 py-0.5 transition-colors tabular-nums"
+              />
+            </div>
+            {!valid && (
+              <p className="mt-1 text-xs text-[var(--discount-red)]">
+                Enter between ₹100 and ₹10000.
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => valid && onReplan(amount, fromIdx)}
+            disabled={!valid}
+            className="w-full py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+          >
+            Replan {remaining} {remaining === 1 ? "day" : "days"} with ₹{amount}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

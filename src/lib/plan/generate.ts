@@ -33,6 +33,7 @@ const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
 export async function generatePlan(input: PlanInput): Promise<Plan> {
   const days = Math.min(7, Math.max(2, input.days));
+  const startWeekday = Math.min(6, Math.max(0, input.start_weekday ?? 0));
 
   // ── 0. Decide day-type counts ────────────────────────────────
   // Templates reshape the mix over the same planner: exam = delivery
@@ -98,7 +99,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
           day: dineoutDayIdx + 1,
           restaurant: r.name,
           area: restaurantFull?.area ?? "",
-          slot: `${WEEKDAYS[dineoutDayIdx]} ${best.start_time}-${best.end_time}`,
+          slot: `${WEEKDAYS[(startWeekday + dineoutDayIdx) % 7]} ${best.start_time}-${best.end_time}`,
           discount_percent: best.discount_percent,
           per_person_cost: best.cost_per_person_after_discount,
           travel_minutes:
@@ -233,7 +234,7 @@ export async function generatePlan(input: PlanInput): Promise<Plan> {
   const perMealCost = cart.serves > 0 ? Math.round(cart.total / cart.serves) : 0;
 
   for (let i = 0; i < days; i++) {
-    const weekday = WEEKDAYS[i];
+    const weekday = WEEKDAYS[(startWeekday + i) % 7];
     const dayNum = i + 1;
 
     if (i === dineoutDayIdx && dineoutBooking) {

@@ -26,6 +26,9 @@ export interface PlanInput {
   payday_day?: number;
   /** Optional week template shaping the day mix. */
   template?: WeekTemplate;
+  /** Weekday the plan starts on, 0 = Mon … 6 = Sun. Defaults to Monday.
+   *  Set by mid-week re-plans (roadmap #9) so labels stay truthful. */
+  start_weekday?: number;
   /** Optional user coords for travel-time chips on Dineout options. */
   coords?: Coords;
 }

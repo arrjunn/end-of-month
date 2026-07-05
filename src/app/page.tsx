@@ -82,6 +82,41 @@ export default function Home() {
     void searchPanic(params);
   }
 
+  // Mid-week re-plan (roadmap #9): replan the remaining days against the
+  // remaining budget. The new plan starts on the right weekday.
+  async function handleReplan(remainingBudget: number, fromDayIdx: number) {
+    if (!plan) return;
+    const remainingDays = plan.input.days - fromDayIdx;
+    if (remainingDays < 2) return;
+    const startWeekday = ((plan.input.start_weekday ?? 0) + fromDayIdx) % 7;
+    setLoading(true);
+    setError(null);
+    try {
+      const [res] = await Promise.all([
+        fetch("/api/plan", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            ...plan.input,
+            budget: remainingBudget,
+            days: remainingDays,
+            start_weekday: startWeekday,
+            pantry_skus: readStore(PANTRY_KEY, EMPTY_STRINGS),
+          }),
+        }),
+        new Promise((resolve) => setTimeout(resolve, 1200)),
+      ]);
+      if (!res.ok) throw new Error(`Plan API returned ${res.status}`);
+      const data: Plan = await res.json();
+      setPlan(data);
+      setWhatIfBase(data.input.budget);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handlePlan(input: PlanInput) {
     setLoading(true);
     setError(null);
@@ -184,6 +219,7 @@ export default function Home() {
                 whatIfBase={whatIfBase}
                 whatIfBusy={whatIfBusy}
                 onWhatIf={handleWhatIf}
+                onReplan={handleReplan}
               />
             ) : (
               <EmptyState />
